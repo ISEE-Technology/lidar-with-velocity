@@ -48,4 +48,4 @@ Then follow the commands blow :
     rviz -d src/lidar-with-velocity/rviz-cfg/vis.rviz
     rosrun lidar-with-velocity main_ros
 
-there will be a Rviz window and a PCL Viewer window to show the results, press key "space" to process the next frame.
+there will be a Rviz window and a PCL Viewer window to show the results, press key "space" in the PCL Viewer window to process the next frame.
