@@ -38,14 +38,10 @@ replace the "DATASET_PATH" in config/config.yaml with your extracted dataset pat
 
     dataset_path: YOUR_CATKIN_WS_PATH/catkin_ws/data/
 
-replace the "CONFIG_YAML_PATH" with your config.yaml file path, example:
-
-    "YOUR_CATKIN_WS_PATH/catkin_ws/src/lidar-with-velocity/config.yaml"
-
 Then follow the commands blow :
 
     roscore
-    rviz -d src/lidar-with-velocity/rviz-cfg/vis.rviz
+    rviz -d src/lidar-with-velocity/rviz_cfg/vis.rviz
     rosrun lidar-with-velocity main_ros
 
 there will be a Rviz window and a PCL Viewer window to show the results, press key "space" in the PCL Viewer window to process the next frame.

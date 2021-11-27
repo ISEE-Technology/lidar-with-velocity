@@ -7,6 +7,7 @@
 #include <pcl/point_types.h>
 #include <pcl/io/pcd_io.h>
 #include <Eigen/Core>
+#include <ros/package.h>
 
 #include "yaml-cpp/yaml.h"
 

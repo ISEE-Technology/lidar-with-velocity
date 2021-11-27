@@ -16,8 +16,10 @@ Config::~Config()
 bool Config::readParam()
 {
     std::cout << "-----------------config param-----------------" << std::endl;
+    std::string config_path;
+    config_path = ros::package::getPath("lidar-with-velocity"); 
     YAML::Node config = YAML::LoadFile(
-        "CONFIG_YAML_PATH"
+        config_path + "/config/config.yaml"
     );
     if (config["camera_intrinsic"]) 
     {
