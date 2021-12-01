@@ -2,11 +2,11 @@
 
 ####  A robust camera and Lidar fusion based velocity estimator to undistort the pointcloud. 
 
-![scanningPattern](./figs/scanningPattern.png)
+<img src="./figs/scanningPattern.png" alt="scanningPattern" style="zoom: 33%;" />
 
+<img src="/home/yw/vance/git/catkin_ws/src/lidar-with-velocity/figs/multi_frame_integration.png" alt="multi_frame_integration" style="zoom:50%;" />
 
-
-**![vel_proj](./figs/vel_proj.png)related paper:** Lidar with Velocity : Motion Distortion Correction of Point Clouds fromOscillating Scanning Lidars [arXiv](https://arxiv.org/abs/2111.09497)
+**related paper:** Lidar with Velocity : Motion Distortion Correction of Point Clouds fromOscillating Scanning Lidars [arXiv](https://arxiv.org/abs/2111.09497)
 
 ## 1. Prerequisites
 
