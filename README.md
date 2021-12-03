@@ -2,9 +2,9 @@
 
 ####  A robust camera and Lidar fusion based velocity estimator to undistort the pointcloud. 
 
-<img src="./figs/scanningPattern.png" alt="scanningPattern" style="zoom: 33%;" />
+<img src="./figs/scanningPattern.png" alt="scanningPattern" style="zoom: 25%;" />
 
-<img src="./figs/multi_frame_integration.png" alt="multi_frame_integration" style="zoom:50%;" />
+<img src="./figs/multi_frame_integration.png" alt="multi_frame_integration" style="zoom: 33%;" />
 
 **related paper:** Lidar with Velocity : Motion Distortion Correction of Point Clouds fromOscillating Scanning Lidars [arXiv](https://arxiv.org/abs/2111.09497)
 
