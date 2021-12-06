@@ -8,13 +8,13 @@
 
 ## 1. Prerequisites
 
-1.1 **Ubuntu** and **ROS**.  Tested on Ubuntu 18.04. ROS Melodic
+**Ubuntu** and **ROS**.  Tested on Ubuntu 18.04. ROS Melodic
 
-1.2 **Eigen**
+**Eigen 3.3.4** 
 
-1.3 **Ceres Solver** 
+**Ceres Solver 1.14.0** 
 
-1.4 **Opencv** 
+**Opencv 3.2.0** 
 
 ## 2. Build on ROS
 
