@@ -49,12 +49,12 @@ include_directories(
 )
 
 add_executable(main_ros 
-  src/assignment/main.cpp
-  src/assignment/assignment.cpp 
-  src/assignment/frame.cpp 
-  src/assignment/config.cpp
-  src/assignment/tracker.cpp 
-  src/assignment/Hungarian.cpp
+  src/main.cpp
+  src/start.cpp
+  src/frame.cpp 
+  src/config.cpp
+  src/tracker.cpp 
+  src/Hungarian.cpp
 )
 target_link_libraries(main_ros 
   ${catkin_LIBRARIES} 

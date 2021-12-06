@@ -1,6 +1,6 @@
-#include "common/assignment.h"
+#include "common/main.h"
 
-assignment::assignment(int argc, char** argv)
+assignmentDetector::assignmentDetector(int argc, char** argv)
 {
     if(!config_.readParam())
     {
@@ -11,9 +11,9 @@ assignment::assignment(int argc, char** argv)
     run(argc, argv);
 }
 
-assignment::~assignment(){}
+assignmentDetector::~assignmentDetector(){}
 
-bool assignment::run(int argc, char** argv)
+bool assignmentDetector::run(int argc, char** argv)
 {
     ros::init(argc, argv, "lidar_with_velocity");
     ros::NodeHandle nh;
@@ -78,7 +78,6 @@ bool assignment::run(int argc, char** argv)
         std::cout << "find cube : " << detection3dFileName.size() << std::endl << std::endl;
     }
 
-    // 3d detection cube files 
     Timer detection_3d_timer("detection_3d_timer");
     std::vector<frameCubesWithTime> detection_3d_buffer;
     for (size_t detection_3d_idx = 0; detection_3d_idx < detection3dFileName.size(); 

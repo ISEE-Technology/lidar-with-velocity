@@ -13,7 +13,7 @@
 
 class Config
 {
-    friend class assignment;
+    friend class assignmentDetector;
     friend class Frame;
     friend class fusion_tracker;
     

@@ -1,6 +1,6 @@
-//assignment.h
-#ifndef ASSIGNMENT_H
-#define ASSIGNMENT_H
+//main.h
+#ifndef MAIN_H
+#define MAIN_H
 
 #include <iostream> 
 #include <fstream>
@@ -12,7 +12,6 @@
 
 #include <ros/ros.h>
 #include <sensor_msgs/PointCloud2.h>
-
 
 #include "tracker/tracker.h"
 #include "common/frame.h"
@@ -33,19 +32,18 @@ void expand_3d_cube(
     frameCubesWithTime & cubes_in
 );
 
-
-class assignment
+class assignmentDetector
 {
 private:
     Config config_;
 
 public:
-    assignment(int argc, char** argv);
-    ~assignment();
+    assignmentDetector(int argc, char** argv);
+    ~assignmentDetector();
 
     bool run(int argc, char** argv);
     bool is_nextFrame_ = false;
 };
 
 
-#endif //ASSIGNMENT_H
+#endif //MAIN_H
