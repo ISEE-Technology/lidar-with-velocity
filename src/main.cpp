@@ -78,6 +78,7 @@ bool assignmentDetector::run(int argc, char** argv)
         std::cout << "find cube : " << detection3dFileName.size() << std::endl << std::endl;
     }
 
+    // 3d detection cube files 
     Timer detection_3d_timer("detection_3d_timer");
     std::vector<frameCubesWithTime> detection_3d_buffer;
     for (size_t detection_3d_idx = 0; detection_3d_idx < detection3dFileName.size(); 
