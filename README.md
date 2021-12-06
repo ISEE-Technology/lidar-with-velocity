@@ -5,8 +5,8 @@
 ​	This repository is a barebones implementation for our paper [Lidar with Velocity : Motion Distortion Correction of Point Clouds fromOscillating Scanning Lidars](https://arxiv.org/abs/2111.09497) . It's a fusion based method to handle the oscillating scan Lidar points distortion problem, and can also provide a accurate velocity of the objects. 
 
 <center class="half">
-<img src="./figs/multi_frame_integration.png" width = "45%" alt="***" align=left />
-<img src="https://github.com/ISEE-Technology/lidar-with-velocity/blob/main/figs/result.gif" width = "55%"  alt="***" align=right />
+<img src="./figs/multi_frame_integration.png" width = "50%" alt="***" align=left />
+<img src="https://github.com/ISEE-Technology/lidar-with-velocity/blob/main/figs/result.gif" width = "50%"  alt="***" align=right />
 <center>
 
 
@@ -26,6 +26,8 @@
 
 
 
+
+​	
 
 ​	
 
