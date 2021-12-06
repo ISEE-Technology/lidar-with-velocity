@@ -6,7 +6,7 @@
 
 <center class="half">
 <img src="./figs/multi_frame_integration.png" width = "45%" alt="***" align=left />
-<img src="./figs/result.gif" width = "55%"  alt="***" align=right />
+<img src="https://github.com/ISEE-Technology/lidar-with-velocity/blob/main/figs/result.gif" width = "55%"  alt="***" align=right />
 <center>
 
 
