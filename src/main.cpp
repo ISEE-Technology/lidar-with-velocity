@@ -335,11 +335,11 @@ bool assignmentDetector::run(int argc, char** argv)
     viewer_objs->addCoordinateSystem(0.5);
     viewer_objs->setCameraPosition(-46.698877,8.333347,39.880589,0.449239,-0.004796,0.893399);
 
-    // main frame loop
     fusion_tracker fusionTracker;
     size_t loop_count = 0;
     std::vector<pcl::PointCloud<pcl::PointXYZRGB>> final_last_pcs;
     visualization_msgs::MarkerArray obj_vel_txt_markerarray;
+    // main frame loop
     for (size_t frame_idx = 0; frame_idx < pcd_buffer.size(); ++frame_idx)
     {
         Timer frame_timer("This frame time");
@@ -365,7 +365,6 @@ bool assignmentDetector::run(int argc, char** argv)
         std::vector<pcl::PointCloud<pcl::PointXYZI>> * obj_clouds;
         pcl::PointCloud<pcl::PointXYZI> obj_cloud;
         obj_clouds = frame.getObjcloud();
-        // no detection obj order !
         frame.detection_align(
             obj_clouds,
             &raw_img_buffer[frame_idx].second,
