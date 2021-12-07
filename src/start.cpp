@@ -5,5 +5,5 @@ int main (int argc, char** argv)
 {
     // start
     std::cout << "\nObject-Undistorting START ! \n\n";
-    assignmentDetector LidarwithVelocity(argc, argv);
+    AssignmentDetector LidarwithVelocity(argc, argv);
 }

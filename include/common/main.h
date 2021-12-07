@@ -23,22 +23,23 @@ bool timestampSort(const T & left, const T & right)
 }
 
 void nextFrame(const pcl::visualization::KeyboardEvent& event, void* nothing); 
-void getFilesList(const std::string & dirpath, const bool & is_recursive, std::vector<std::string> & out_filelist);
-double GetIOU(Cube bb_test, Cube bb_gt);
+void getFilesList(const std::string & dirpath, 
+    const bool & is_recursive, std::vector<std::string> & out_filelist);
+double GetIOU(const Cube & bb_test,const Cube & bb_gt);
 void expand_3d_detection(
     frameCubesWithTime & cubes_in
 );
 
 
 
-class assignmentDetector
+class AssignmentDetector
 {
 private:
     Config config_;
 
 public:
-    assignmentDetector(int argc, char** argv);
-    ~assignmentDetector();
+    AssignmentDetector(int argc, char** argv);
+    ~AssignmentDetector();
 
     bool run(int argc, char** argv);
     bool is_nextFrame_ = false;

@@ -45,10 +45,10 @@ typedef struct Cube
     Eigen::Matrix4d pose_;
 };
 
-class kfTracker
+class KfTracker
 {
 public:
-    kfTracker()
+    KfTracker()
     {
         init_kf(alignedDet());
         m_time_since_update = 0;
@@ -58,7 +58,7 @@ public:
 		m_id = kf_count;
         estimated_vel_.setZero();
     }
-    kfTracker(
+    KfTracker(
         alignedDet detection_in
     )
     {
@@ -70,7 +70,7 @@ public:
 		m_id = kf_count;
         estimated_vel_.setZero();
     }
-    ~kfTracker()
+    ~KfTracker()
     {
         measurement_history_.clear();
     }
@@ -112,7 +112,7 @@ private:
     
 };
 
-class fusion_tracker
+class Fusion_tracker
 {
 private:
     vector<alignedDet> last_detection_;
@@ -122,7 +122,7 @@ private:
 	vector<cv::Point2f> prev_pts_;
     cv::Mat prev_gray_;
 
-    vector<kfTracker> trackers_;
+    vector<KfTracker> trackers_;
     int total_frames_;
     int frame_count_;
     vector<alignedDet> predictedBoxes_;
@@ -137,8 +137,8 @@ private:
     vector<cv::Point> matchedPairs_;
     double iouThreshold_;
 public:
-    fusion_tracker();
-    ~fusion_tracker();
+    Fusion_tracker();
+    ~Fusion_tracker();
 
     void tracking(
         const std::vector<alignedDet> detections_in,

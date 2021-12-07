@@ -1,6 +1,6 @@
 #include "common/main.h"
 
-assignmentDetector::assignmentDetector(int argc, char** argv)
+AssignmentDetector::AssignmentDetector(int argc, char** argv)
 {
     if(!config_.readParam())
     {
@@ -11,9 +11,9 @@ assignmentDetector::assignmentDetector(int argc, char** argv)
     run(argc, argv);
 }
 
-assignmentDetector::~assignmentDetector(){}
+AssignmentDetector::~AssignmentDetector(){}
 
-bool assignmentDetector::run(int argc, char** argv)
+bool AssignmentDetector::run(int argc, char** argv)
 {
     ros::init(argc, argv, "lidar_with_velocity");
     ros::NodeHandle nh;
@@ -118,7 +118,7 @@ bool assignmentDetector::run(int argc, char** argv)
                     detection_3d_data[ob_name]["points"].as<std::vector<double>>();
                 double* vertexs_array = vertexs_data.data();
                 cube_vertexs = Eigen::Map<Eigen::Matrix<double, 3, 8>>(vertexs_array).transpose();
-                cube3d detected_cube(
+                Cube3d detected_cube(
                     object_type,
                     confidence,
                     cube_vertexs
@@ -233,7 +233,7 @@ bool assignmentDetector::run(int argc, char** argv)
             {
                 bbox_y2 = bboxs_data[ob_name]["bbox_y2"].as<int>();
             }
-            obBBOX object(
+            ObBbox object(
                 object_type,
                 score,
                 bbox_y1,
@@ -336,9 +336,16 @@ bool assignmentDetector::run(int argc, char** argv)
         (new pcl::visualization::PCLVisualizer("3D Viewer objects"));
     viewer_objs->setBackgroundColor(0, 0, 0);
     viewer_objs->addCoordinateSystem(0.5);
-    viewer_objs->setCameraPosition(-46.698877,8.333347,39.880589,0.449239,-0.004796,0.893399);
+    viewer_objs->setCameraPosition(
+        -46.698877,
+        8.333347,
+        39.880589,
+        0.449239,
+        -0.004796,
+        0.893399
+    );
 
-    fusion_tracker fusionTracker;
+    Fusion_tracker fusionTracker;
     size_t loop_count = 0;
     std::vector<pcl::PointCloud<pcl::PointXYZRGB>> final_last_pcs;
     visualization_msgs::MarkerArray obj_vel_txt_markerarray;
@@ -516,7 +523,7 @@ void getFilesList(
     return;
 }
 
-double GetIOU(Cube bb_test, Cube bb_gt)
+double GetIOU(const Cube & bb_test,const Cube & bb_gt)
 {
     /* a 2d projection iou method */
     cv::Rect_<double> box1(

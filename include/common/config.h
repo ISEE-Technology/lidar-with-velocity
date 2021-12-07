@@ -13,9 +13,9 @@
 
 class Config
 {
-    friend class assignmentDetector;
+    friend class AssignmentDetector;
     friend class Frame;
-    friend class fusion_tracker;
+    friend class Fusion_tracker;
     
 private:
 

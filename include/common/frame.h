@@ -34,7 +34,7 @@
 
 #define hubLidarNum 6
 
-struct obBBOX
+struct ObBbox
 {
     std::string object_type_;
     double score_;
@@ -43,7 +43,7 @@ struct obBBOX
     int bbox_y1_;
     int bbox_y2_;
 
-    obBBOX(
+    ObBbox(
         std::string object_type,
         double score,
         int bbox_x1,
@@ -60,13 +60,13 @@ struct obBBOX
     {}
 };
 
-struct cube3d
+struct Cube3d
 {
     std::string object_type_;
     double confidence_;
     Eigen::Matrix<double, 8, 3> cube_vertexs_;
 
-    cube3d(
+    Cube3d(
         std::string object_type,
         double confidence,
         Eigen::Matrix<double, 8, 3> cube_vertexs
@@ -91,8 +91,8 @@ typedef struct alignedDet
 }alignedDet;
 
 typedef std::vector<std::pair<uint64_t, pcl::PointCloud<pcl::PointXYZRGB>>> pcdWithTime;
-typedef std::vector<obBBOX> frameBboxs;
-typedef std::vector<cube3d> frameCubes;
+typedef std::vector<ObBbox> frameBboxs;
+typedef std::vector<Cube3d> frameCubes;
 
 typedef std::pair<uint64_t, cv::Mat> imageWithTime;
 typedef std::pair<uint64_t, pcdWithTime> pcdsWithTime;
@@ -190,7 +190,7 @@ public:
 
     // project the 3d detection result to 2d domain
     void detection3dProj2d(
-        const cube3d * vertex3d,
+        const Cube3d * vertex3d,
         cv::Rect * output
     );
     // 3d 2d detection IoU score 

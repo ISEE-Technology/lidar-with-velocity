@@ -2,7 +2,7 @@
 
 #include "tracker/tracker.h"
 
-int kfTracker::kf_count = 0;
+int KfTracker::kf_count = 0;
 
 class POINT_COST
 {
@@ -107,8 +107,8 @@ private:
     double ptsize_;
 };
 
-// ======================== kfTracker ========================
-alignedDet kfTracker::predict()
+// ======================== KfTracker ========================
+alignedDet KfTracker::predict()
 {
 	cv::Mat p = kf_.predict();
 	m_age += 1;
@@ -124,7 +124,7 @@ alignedDet kfTracker::predict()
 	return detection_cur_;
 }
 
-void kfTracker::init_kf(
+void KfTracker::init_kf(
 	alignedDet detection_in
 )
 {
@@ -170,7 +170,7 @@ void kfTracker::init_kf(
 	rgb3[2] = (rand() % 255) + 0;
 }
 
-std::vector<float> kfTracker::getState(
+std::vector<float> KfTracker::getState(
 	alignedDet detection_in
 )
 {
@@ -213,7 +213,7 @@ std::vector<float> kfTracker::getState(
 	return out_state;
 }
 
-void kfTracker::update(
+void KfTracker::update(
 	alignedDet detection_in,
 	const Eigen::Vector3d & vel_,
 	const Eigen::Matrix3d & vel_cov_
@@ -246,7 +246,7 @@ void kfTracker::update(
 }
 
 // call after update
-void kfTracker::get_kf_vel(
+void KfTracker::get_kf_vel(
 	Eigen::Vector3d & vel_
 )
 {
@@ -255,14 +255,14 @@ void kfTracker::get_kf_vel(
 	vel_(2) = kf_.statePost.at<float>(9, 0);
 }
 
-void kfTracker::update_estimated_vel(
+void KfTracker::update_estimated_vel(
 	const Eigen::Vector3d & vel_
 )
 {
 	estimated_vel_ = vel_;
 }
 
-fusion_tracker::fusion_tracker()
+Fusion_tracker::Fusion_tracker()
 {
 	total_frames_ = 0;
 	frame_count_ = 0;
@@ -271,11 +271,11 @@ fusion_tracker::fusion_tracker()
 	iouThreshold_ = 0.01;
 }
 
-fusion_tracker::~fusion_tracker()
+Fusion_tracker::~Fusion_tracker()
 {
 }
 
-void fusion_tracker::tracking(
+void Fusion_tracker::tracking(
 	const std::vector<alignedDet> detections_in,
 	cv::Mat img_in,
 	Config config_,
@@ -292,7 +292,7 @@ void fusion_tracker::tracking(
 	{
 		for (size_t obj_idx = 0; obj_idx < detections_in.size(); obj_idx++)
 		{
-			kfTracker trk(detections_in[obj_idx]);
+			KfTracker trk(detections_in[obj_idx]);
 			trackers_.push_back(trk);
 		}
 		if(frame_count_ = 1)
@@ -414,7 +414,7 @@ void fusion_tracker::tracking(
 
 	for (auto umd : unmatchedDetections_)
 	{
-		kfTracker new_tracker(detections_in[umd]);
+		KfTracker new_tracker(detections_in[umd]);
 		trackers_.push_back(new_tracker);
 	}
 	tracker_timer.rlog("tracking cost time");
@@ -525,7 +525,7 @@ void fusion_tracker::tracking(
 	last_img_ = img_in;
 }
 
-cv::RotatedRect fusion_tracker::alignedDet2rotaterect(alignedDet detection_in)
+cv::RotatedRect Fusion_tracker::alignedDet2rotaterect(alignedDet detection_in)
 {
     cv::Point2f det_center;
     for (size_t pt_idx = 0; pt_idx < detection_in.vertex3d_.rows(); pt_idx++)
@@ -563,7 +563,7 @@ cv::RotatedRect fusion_tracker::alignedDet2rotaterect(alignedDet detection_in)
     return rect;
 }
 
-double fusion_tracker::GetIOU(alignedDet bb_test, alignedDet bb_gt)
+double Fusion_tracker::GetIOU(alignedDet bb_test, alignedDet bb_gt)
 {
 	/* a 2d projection iou method */
     cv::RotatedRect rect1 = alignedDet2rotaterect(bb_test);
@@ -613,7 +613,7 @@ double fusion_tracker::GetIOU(alignedDet bb_test, alignedDet bb_gt)
 	// return score;
 }
 
-void fusion_tracker::optical_estimator(
+void Fusion_tracker::optical_estimator(
 	cv::Mat prev_,
 	cv::Mat cur_,
 	const std::vector<alignedDet> & prev_detection,
@@ -827,7 +827,7 @@ void fusion_tracker::optical_estimator(
 	prev_gray_ = cur_gray;
 }
 
-void fusion_tracker::points_estimator(
+void Fusion_tracker::points_estimator(
 	const alignedDet & prev_detection,
 	const alignedDet & cur_detection,
 	Eigen::Vector3d & optimal_vel,
@@ -968,7 +968,7 @@ void fusion_tracker::points_estimator(
 	fused_vel_cov = fusion_vel_cov;
 }
 
-void fusion_tracker::vel_fusion(
+void Fusion_tracker::vel_fusion(
 	const alignedDet cur_detection,
 	const alignedDet prev_detection,
 	const Eigen::Vector3d points_vel,

@@ -373,8 +373,6 @@ void Frame::detection_align(
     cv::Mat raw_img = *rawimg_;
     cv::Mat test_img; 
     rawimg_->copyTo(test_img);
-    // proj all the 3d detection to 2d domain
-    // cubes_ => proj2dvertex_buffer 
     for (size_t obj_idx = 0; obj_idx < cubes_->size(); obj_idx++)
     {
         cv::Rect proj2dvertex;
@@ -416,12 +414,10 @@ void Frame::detection_align(
     std::vector<alignedDet> aligneddet_buffer;
     for (size_t pair_idx = 0; pair_idx < matchPairs.size(); pair_idx++)
     {
-        
-
         int idx_2d = matchPairs[pair_idx].x;
         int idx_3d = matchPairs[pair_idx].y;
 
-        obBBOX curbbox = (*objs_)[idx_2d];
+        ObBbox curbbox = (*objs_)[idx_2d];
         cv::Rect obj_bbox(
             curbbox.bbox_y1_,  
             curbbox.bbox_x1_,
@@ -446,11 +442,10 @@ void Frame::detection_align(
         aligneddet_buffer.push_back(aligneddet_tmp);
     }
     aligned_detections = aligneddet_buffer;
-    // the matchpairs size sometimes are smaller than the above twos
 }
 
 void Frame::detection3dProj2d(
-    const cube3d * vertex3d,
+    const Cube3d * vertex3d,
     cv::Rect * output
 )
 {
