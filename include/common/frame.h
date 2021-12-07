@@ -98,6 +98,7 @@ typedef std::pair<uint64_t, cv::Mat> imageWithTime;
 typedef std::pair<uint64_t, pcdWithTime> pcdsWithTime;
 typedef std::pair<uint64_t, frameBboxs> frameBboxsWithTime;
 typedef std::pair<uint64_t, frameCubes> frameCubesWithTime;
+typedef std::pair<uint64_t, Eigen::Matrix4d> poseWithTime;
 
 struct detection_object
 {
@@ -139,8 +140,6 @@ public:
         Config config
     );
     ~Frame();
-
-    bool verboseFrame();
 
     cv::Mat PointCloudToDepth(
         pcl::PointCloud<pcl::PointXYZI>::Ptr cloud_in, Config global_config);

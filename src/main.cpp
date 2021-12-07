@@ -46,7 +46,8 @@ bool assignmentDetector::run(int argc, char** argv)
     
 
     // .pcd pointcloud files  
-    std::vector<std::string> allFileName = getFilesList(config_.pcd_path_, false);
+    std::vector<std::string> allFileName;
+    getFilesList(config_.pcd_path_, false, allFileName);
     if (allFileName.size() == 0)
     {
         throw("pcd path doesn't exist !");
@@ -57,7 +58,8 @@ bool assignmentDetector::run(int argc, char** argv)
     }
 
     // 2d detection bbox files 
-    std::vector<std::string> bboxAllFileName = getFilesList(config_.bbox_path_, false);
+    std::vector<std::string> bboxAllFileName;
+    getFilesList(config_.bbox_path_, false, bboxAllFileName);
     if (bboxAllFileName.size() == 0)
     {
         throw("bbox path doesn't exist !");
@@ -68,7 +70,8 @@ bool assignmentDetector::run(int argc, char** argv)
     }
 
     // 3d detection cube files
-    std::vector<std::string> detection3dFileName = getFilesList(config_.cube_path_, false);
+    std::vector<std::string> detection3dFileName;
+    getFilesList(config_.cube_path_, false, detection3dFileName);
     if (detection3dFileName.size() == 0)
     {
         throw("3d detection path doesn't exist !");
@@ -251,14 +254,14 @@ bool assignmentDetector::run(int argc, char** argv)
     // .pcd pointcloud files  
     Timer pcd_reader_timer("pcd_reader_timer");
     std::vector<pcdsWithTime> pcd_buffer;
-    std::vector<pair<uint64_t, Eigen::Matrix4d>> pose_buffer;
+    std::vector<poseWithTime> pose_buffer;
     YAML::Node pose_config = YAML::LoadFile(
         this->config_.pose_path_
     );
     for (size_t pcd_idx = 0; pcd_idx < allFileName.size(); pcd_idx++)
     {
-        std::vector<std::string> frame_pcds = 
-            getFilesList(allFileName[pcd_idx], false);
+        std::vector<std::string> frame_pcds;
+        getFilesList(allFileName[pcd_idx], false, frame_pcds);
         pcl::PointCloud<pcl::PointXYZRGB> current_point_cloud[hubLidarNum];
         std::string pcds_time_str = allFileName[pcd_idx];
         std::string pose_time = pcds_time_str.erase(0,pcds_time_str.size()-20);
@@ -316,12 +319,12 @@ bool assignmentDetector::run(int argc, char** argv)
     if(pcd_buffer.size() == raw_img_buffer.size() 
         && pcd_buffer.size() == label_img_buffer.size())
     {
-        std::sort(raw_img_buffer.begin(), raw_img_buffer.end(), imgSort);
-        std::sort(label_img_buffer.begin(), label_img_buffer.end(), imgSort);
-        std::sort(pcd_buffer.begin(), pcd_buffer.end(), pcdSort);
-        std::sort(bbox_buffer.begin(), bbox_buffer.end(), bboxSort);
-        std::sort(detection_3d_buffer.begin(), detection_3d_buffer.end(), cubeSort);
-        std::sort(pose_buffer.begin(), pose_buffer.end(), poseSort);
+        std::sort(raw_img_buffer.begin(), raw_img_buffer.end(), timestampSort<imageWithTime>);
+        std::sort(label_img_buffer.begin(), label_img_buffer.end(), timestampSort<imageWithTime>);
+        std::sort(pcd_buffer.begin(), pcd_buffer.end(), timestampSort<pcdsWithTime>);
+        std::sort(bbox_buffer.begin(), bbox_buffer.end(), timestampSort<frameBboxsWithTime>);
+        std::sort(detection_3d_buffer.begin(), detection_3d_buffer.end(), timestampSort<frameCubesWithTime>);
+        std::sort(pose_buffer.begin(), pose_buffer.end(), timestampSort<poseWithTime>);
     }
     else
     {
@@ -347,7 +350,7 @@ bool assignmentDetector::run(int argc, char** argv)
         cout << "=========================== seq:" << 
             frame_idx + 1 << " ===========================" << endl;
 
-        expand_3d_cube(detection_3d_buffer[frame_idx]);
+        expand_3d_detection(detection_3d_buffer[frame_idx]);
 
         Frame frame(
             raw_img_buffer[frame_idx],
@@ -359,7 +362,6 @@ bool assignmentDetector::run(int argc, char** argv)
         );
 
         frame.full_detection(&pcd_buffer[frame_idx]);
-        // frame.verboseFrame();
 
         std::vector<alignedDet> aligned_detection_buffer;
         std::vector<pcl::PointCloud<pcl::PointXYZI>> * obj_clouds;
@@ -455,7 +457,11 @@ void nextFrame(const pcl::visualization::KeyboardEvent& event, void* val)
     }
 }
 
-std::vector<std::string> getFilesList(std::string dirpath, bool is_recursive)
+void getFilesList(
+    const std::string & dirpath,
+    const bool & is_recursive,
+    std::vector<std::string> & out_filelist
+)
 {
     DIR *dir = opendir(dirpath.c_str());
     if (dir == NULL)
@@ -482,8 +488,8 @@ std::vector<std::string> getFilesList(std::string dirpath, bool is_recursive)
                 dirNew = dirpath + entry->d_name;
                 
             }
-            std::vector<std::string> tempPath = getFilesList(dirNew, 
-                !entry->d_type == DT_DIR);
+            std::vector<std::string> tempPath;
+            getFilesList(dirNew, !entry->d_type == DT_DIR, tempPath);
             allPath.insert(allPath.end(), tempPath.begin(), tempPath.end());
 
         }
@@ -506,35 +512,8 @@ std::vector<std::string> getFilesList(std::string dirpath, bool is_recursive)
 
     }
     closedir(dir);
-    return allPath;
-}
-
-bool imgSort(const imageWithTime& left, const imageWithTime& right)
-{
-    return (left.first < right.first);
-}
-
-bool pcdSort(const pcdsWithTime& left, const pcdsWithTime& right)
-{
-    return (left.first < right.first);
-}
-bool bboxSort(const frameBboxsWithTime& left, const frameBboxsWithTime& right)
-{
-    return (left.first < right.first);
-}
-bool cubeSort(const frameCubesWithTime& left, const frameCubesWithTime& right)
-{
-    return (left.first < right.first);
-}
-bool poseSort(const pair<uint64_t, Eigen::Matrix4d>& left, 
-    const pair<uint64_t, Eigen::Matrix4d>& right)
-{
-    return (left.first < right.first);
-}
-bool pcSort(const pcl::PointCloud<pcl::PointXYZI>& left, 
-    const pcl::PointCloud<pcl::PointXYZI>& right)
-{
-    return (left.size() < right.size());
+    out_filelist = allPath;
+    return;
 }
 
 double GetIOU(Cube bb_test, Cube bb_gt)
@@ -562,7 +541,7 @@ double GetIOU(Cube bb_test, Cube bb_gt)
 
 }
 
-void expand_3d_cube(
+void expand_3d_detection(
     frameCubesWithTime & cubes_in
 )
 {

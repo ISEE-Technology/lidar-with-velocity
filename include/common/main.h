@@ -16,21 +16,20 @@
 #include "tracker/tracker.h"
 #include "common/frame.h"
 
+template <typename T>
+bool timestampSort(const T & left, const T & right)
+{
+    return (left.first < right.first);
+}
+
 void nextFrame(const pcl::visualization::KeyboardEvent& event, void* nothing); 
-std::vector<std::string> getFilesList(std::string dirpath, bool is_recursive);
-bool imgSort(const imageWithTime& left, const imageWithTime& right);
-bool pcdSort(const pcdsWithTime& left, const pcdsWithTime& right);
-bool bboxSort(const frameBboxsWithTime& left, const frameBboxsWithTime& right);
-bool cubeSort(const frameCubesWithTime& left, const frameCubesWithTime& right);
-bool poseSort(
-    const pair<uint64_t, Eigen::Matrix4d>& left, 
-    const pair<uint64_t, Eigen::Matrix4d>& right);
-bool pcSort(const pcl::PointCloud<pcl::PointXYZI>& left, 
-    const pcl::PointCloud<pcl::PointXYZI>& right);
+void getFilesList(const std::string & dirpath, const bool & is_recursive, std::vector<std::string> & out_filelist);
 double GetIOU(Cube bb_test, Cube bb_gt);
-void expand_3d_cube(
+void expand_3d_detection(
     frameCubesWithTime & cubes_in
 );
+
+
 
 class assignmentDetector
 {

@@ -31,28 +31,6 @@ Frame::Frame(
     }
 }
 
-
-bool Frame::verboseFrame()
-{
-    std::cout << "-------------------------------" << std::endl;;
-    std::cout << "raw  img  time : " 
-        << std::to_string(this->time_stamp_[0]).insert(10,"_") << std::endl;
-    std::cout << "label img time : " 
-        << std::to_string(this->time_stamp_[1]).insert(10,"_") << std::endl;
-    std::cout << "pcds      time : " 
-        << std::to_string(this->time_stamp_[2]).insert(10,"_") 
-        << ",  points number = " << this->frame_pointcloud_.size()
-        << std::endl;
-    std::cout << "detected \"" << this->objs_.size() << "\" objs" << std::endl; 
-    for (size_t pcd_idx = 0; pcd_idx < this->pointclouds_.size(); pcd_idx++)
-    {
-        std::cout << "lidar " << pcd_idx+1 << " time : " 
-            <<  std::to_string(this->time_stamp_[pcd_idx+3]).insert(10,"_")
-            << std::endl;
-    }
-    std::cout << "\n";
-}
-
 pcl::PointCloud<pcl::PointXYZRGB> Frame::depth_to_pointcloud(
     cv::Mat& depthImageIn, Config global_config
 )
