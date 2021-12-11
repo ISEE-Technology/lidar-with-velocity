@@ -48,16 +48,6 @@ typedef struct Cube
 class KfTracker
 {
 public:
-    KfTracker()
-    {
-        init_kf(alignedDet());
-        m_time_since_update = 0;
-		m_hits = 0;
-		m_hit_streak = 0;
-		m_age = 0;
-		m_id = kf_count;
-        estimated_vel_.setZero();
-    }
     KfTracker(
         alignedDet detection_in
     )
