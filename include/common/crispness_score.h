@@ -10,7 +10,7 @@ in the paper "Self-Calibration for a 3D Laser" by Mark Sheehan.
 
 ***************************************************************************/
 #include <iostream>
-#include<cmath>
+#include <cmath>
 
 #include <pcl/io/pcd_io.h>
 #include <pcl/io/ply_io.h>
