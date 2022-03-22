@@ -28,7 +28,7 @@ Clone the repository and catkin_make:
 
 ## 3. Directly run
 
-First download the [dataset](https://drive.google.com/drive/folders/1JEwnVVO84peunFiCXSc-T5QyK0gD3kAt?usp=sharing) and extract it.
+First download the [dataset](https://drive.google.com/file/d/1fYQFvZhQXK_kazsPTJ1DrmPwMEdRw6qX/view?usp=sharing) and extract it.
 
 replace the "DATASET_PATH" in config/config.yaml with your extracted dataset path (notice the "/")
 
