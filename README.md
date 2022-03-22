@@ -28,16 +28,12 @@ Clone the repository and catkin_make:
 
 ## 3. Directly run
 
-First download the [dataset](https://drive.google.com/drive/folders/1JEwnVVO84peunFiCXSc-T5QyK0gD3kAt?usp=sharing) and extract in /catkin_ws/ path.
+First download the [dataset](https://drive.google.com/drive/folders/1JEwnVVO84peunFiCXSc-T5QyK0gD3kAt?usp=sharing) and extract it.
 
-replace the "DATASET_PATH" in config/config.yaml with your extracted dataset path, example: (notice the "/")
-
-    dataset_path: YOUR_CATKIN_WS_PATH/catkin_ws/data/
+replace the "DATASET_PATH" in config/config.yaml with your extracted dataset path (notice the "/")
 
 Then follow the commands blow :
 
-    roscore
-    rviz -d src/lidar-with-velocity/rviz_cfg/vis.rviz
-    rosrun lidar-with-velocity main_ros
+    roslaunch object_undistort start.launch
 
 there will be a Rviz window and a PCL Viewer window to show the results, press key "space" in the PCL Viewer window to process the next frame.

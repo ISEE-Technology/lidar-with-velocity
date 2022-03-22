@@ -1,6 +1,6 @@
-#include "common/main.h"
+#include "common/assignment.h"
 
-AssignmentDetector::AssignmentDetector(int argc, char** argv)
+assignment::assignment(int argc, char** argv)
 {
     if(!config_.readParam())
     {
@@ -11,15 +11,14 @@ AssignmentDetector::AssignmentDetector(int argc, char** argv)
     run(argc, argv);
 }
 
-AssignmentDetector::~AssignmentDetector(){}
+assignment::~assignment(){}
 
-bool AssignmentDetector::run(int argc, char** argv)
+bool assignment::run(int argc, char** argv)
 {
     ros::init(argc, argv, "lidar_with_velocity");
     ros::NodeHandle nh;
     VisHandel vis(nh);
 
-    // raw imgs 
     std::vector<cv::String> raw_img_fn;
     cv::glob(config_.raw_img_path_, raw_img_fn, false);
     if (raw_img_fn.size() == 0)
@@ -32,7 +31,6 @@ bool AssignmentDetector::run(int argc, char** argv)
     }
     
 
-    // label imgs
     std::vector<cv::String> label_img_fn;
     cv::glob(config_.label_img_path_, label_img_fn, false);
     if (label_img_fn.size() == 0)
@@ -45,9 +43,7 @@ bool AssignmentDetector::run(int argc, char** argv)
     }
     
 
-    // .pcd pointcloud files  
-    std::vector<std::string> allFileName;
-    getFilesList(config_.pcd_path_, false, allFileName);
+    std::vector<std::string> allFileName = getFilesList(config_.pcd_path_, false);
     if (allFileName.size() == 0)
     {
         throw("pcd path doesn't exist !");
@@ -57,9 +53,7 @@ bool AssignmentDetector::run(int argc, char** argv)
         std::cout << "find pcd : " << allFileName.size() << std::endl;
     }
 
-    // 2d detection bbox files 
-    std::vector<std::string> bboxAllFileName;
-    getFilesList(config_.bbox_path_, false, bboxAllFileName);
+    std::vector<std::string> bboxAllFileName = getFilesList(config_.bbox_path_, false);
     if (bboxAllFileName.size() == 0)
     {
         throw("bbox path doesn't exist !");
@@ -69,9 +63,7 @@ bool AssignmentDetector::run(int argc, char** argv)
         std::cout << "find bbox : " << bboxAllFileName.size() << std::endl;
     }
 
-    // 3d detection cube files
-    std::vector<std::string> detection3dFileName;
-    getFilesList(config_.cube_path_, false, detection3dFileName);
+    std::vector<std::string> detection3dFileName = getFilesList(config_.cube_path_, false);
     if (detection3dFileName.size() == 0)
     {
         throw("3d detection path doesn't exist !");
@@ -81,7 +73,6 @@ bool AssignmentDetector::run(int argc, char** argv)
         std::cout << "find cube : " << detection3dFileName.size() << std::endl << std::endl;
     }
 
-    // 3d detection cube files 
     Timer detection_3d_timer("detection_3d_timer");
     std::vector<frameCubesWithTime> detection_3d_buffer;
     for (size_t detection_3d_idx = 0; detection_3d_idx < detection3dFileName.size(); 
@@ -118,7 +109,7 @@ bool AssignmentDetector::run(int argc, char** argv)
                     detection_3d_data[ob_name]["points"].as<std::vector<double>>();
                 double* vertexs_array = vertexs_data.data();
                 cube_vertexs = Eigen::Map<Eigen::Matrix<double, 3, 8>>(vertexs_array).transpose();
-                Cube3d detected_cube(
+                cube3d detected_cube(
                     object_type,
                     confidence,
                     cube_vertexs
@@ -133,7 +124,6 @@ bool AssignmentDetector::run(int argc, char** argv)
     detection_3d_timer.rlog("detection_3d_timer cost");
     cout << "\n";
 
-    // raw imgs 
     Timer raw_reader_timer("raw_reader_timer");
     std::vector<imageWithTime> raw_img_buffer;
     for (size_t raw_img_idx = 0; raw_img_idx < raw_img_fn.size(); raw_img_idx++)
@@ -156,7 +146,6 @@ bool AssignmentDetector::run(int argc, char** argv)
     raw_reader_timer.rlog("raw_reader_timer cost");
     std::cout << "\n";
 
-    // label imgs
     Timer label_reader_timer("label_reader_timer");
     std::vector<imageWithTime> label_img_buffer;
     for (size_t label_img_idx = 0; label_img_idx < label_img_fn.size(); 
@@ -181,7 +170,6 @@ bool AssignmentDetector::run(int argc, char** argv)
     label_reader_timer.rlog("label_reader_timer cost");
     std::cout << "\n";
 
-    // 2d detection bbox files 
     Timer bbox_reader_timer("bbox_reader_timer");
     std::vector<frameBboxsWithTime> bbox_buffer;
     for (size_t framebboxs_idx = 0; framebboxs_idx < bboxAllFileName.size(); 
@@ -233,7 +221,7 @@ bool AssignmentDetector::run(int argc, char** argv)
             {
                 bbox_y2 = bboxs_data[ob_name]["bbox_y2"].as<int>();
             }
-            ObBbox object(
+            obBBOX object(
                 object_type,
                 score,
                 bbox_y1,
@@ -251,17 +239,16 @@ bool AssignmentDetector::run(int argc, char** argv)
     bbox_reader_timer.rlog("bbox_reader_timer cost");
     std::cout << "\n";
 
-    // .pcd pointcloud files  
     Timer pcd_reader_timer("pcd_reader_timer");
     std::vector<pcdsWithTime> pcd_buffer;
-    std::vector<poseWithTime> pose_buffer;
+    std::vector<pair<uint64_t, Eigen::Matrix4d>> pose_buffer;
     YAML::Node pose_config = YAML::LoadFile(
         this->config_.pose_path_
     );
     for (size_t pcd_idx = 0; pcd_idx < allFileName.size(); pcd_idx++)
     {
-        std::vector<std::string> frame_pcds;
-        getFilesList(allFileName[pcd_idx], false, frame_pcds);
+        std::vector<std::string> frame_pcds = 
+            getFilesList(allFileName[pcd_idx], false);
         pcl::PointCloud<pcl::PointXYZRGB> current_point_cloud[hubLidarNum];
         std::string pcds_time_str = allFileName[pcd_idx];
         std::string pose_time = pcds_time_str.erase(0,pcds_time_str.size()-20);
@@ -311,53 +298,40 @@ bool AssignmentDetector::run(int argc, char** argv)
     pcd_reader_timer.rlog("pcd_reader_timer cost");
     std::cout << "\n";
 
-    // global poses
     std::cout << "readed pose : " << pose_buffer.size() << "\n\n";
 
 
-    // sort the input imgs and pcds by timestamp
     if(pcd_buffer.size() == raw_img_buffer.size() 
         && pcd_buffer.size() == label_img_buffer.size())
     {
-        std::sort(raw_img_buffer.begin(), raw_img_buffer.end(), timestampSort<imageWithTime>);
-        std::sort(label_img_buffer.begin(), label_img_buffer.end(), timestampSort<imageWithTime>);
-        std::sort(pcd_buffer.begin(), pcd_buffer.end(), timestampSort<pcdsWithTime>);
-        std::sort(bbox_buffer.begin(), bbox_buffer.end(), timestampSort<frameBboxsWithTime>);
-        std::sort(detection_3d_buffer.begin(), detection_3d_buffer.end(), timestampSort<frameCubesWithTime>);
-        std::sort(pose_buffer.begin(), pose_buffer.end(), timestampSort<poseWithTime>);
+        std::sort(raw_img_buffer.begin(), raw_img_buffer.end(), imgSort);
+        std::sort(label_img_buffer.begin(), label_img_buffer.end(), imgSort);
+        std::sort(pcd_buffer.begin(), pcd_buffer.end(), pcdSort);
+        std::sort(bbox_buffer.begin(), bbox_buffer.end(), bboxSort);
+        std::sort(detection_3d_buffer.begin(), detection_3d_buffer.end(), cubeSort);
+        std::sort(pose_buffer.begin(), pose_buffer.end(), poseSort);
     }
     else
     {
         throw("ERROR! input imgs and pcds don't match!");
     }
 
-    // vis tool initialization 
     boost::shared_ptr<pcl::visualization::PCLVisualizer> viewer_objs
         (new pcl::visualization::PCLVisualizer("3D Viewer objects"));
     viewer_objs->setBackgroundColor(0, 0, 0);
     viewer_objs->addCoordinateSystem(0.5);
-    viewer_objs->setCameraPosition(
-        -46.698877,
-        8.333347,
-        39.880589,
-        0.449239,
-        -0.004796,
-        0.893399
-    );
+    viewer_objs->setCameraPosition(-46.698877,8.333347,39.880589,0.449239,-0.004796,0.893399);
 
-    Fusion_tracker fusionTracker;
+    fusion_tracker fusionTracker;
     size_t loop_count = 0;
     std::vector<pcl::PointCloud<pcl::PointXYZRGB>> final_last_pcs;
     visualization_msgs::MarkerArray obj_vel_txt_markerarray;
-    // main frame loop
     for (size_t frame_idx = 0; frame_idx < pcd_buffer.size(); ++frame_idx)
     {
-        Timer frame_timer("This frame time");
-
         cout << "=========================== seq:" << 
             frame_idx + 1 << " ===========================" << endl;
 
-        expand_3d_detection(detection_3d_buffer[frame_idx]);
+        expand_3d_cube(detection_3d_buffer[frame_idx]);
 
         Frame frame(
             raw_img_buffer[frame_idx],
@@ -369,11 +343,18 @@ bool AssignmentDetector::run(int argc, char** argv)
         );
 
         frame.full_detection(&pcd_buffer[frame_idx]);
+        // frame.verboseFrame();
 
         std::vector<alignedDet> aligned_detection_buffer;
         std::vector<pcl::PointCloud<pcl::PointXYZI>> * obj_clouds;
         pcl::PointCloud<pcl::PointXYZI> obj_cloud;
         obj_clouds = frame.getObjcloud();
+        if (bbox_buffer[frame_idx].second.size() == 0 ||
+            detection_3d_buffer[frame_idx].second.size() == 0)
+        {
+            continue;
+        }
+        
         frame.detection_align(
             obj_clouds,
             &raw_img_buffer[frame_idx].second,
@@ -385,7 +366,6 @@ bool AssignmentDetector::run(int argc, char** argv)
 
         vis.txt_marker_3d_publisher(aligned_detection_buffer);
 
-        // raw cloud
         sensor_msgs::PointCloud2 raw_cloud_msg;
         pcl::PointCloud<pcl::PointXYZI> frame_pcd = *frame.getCloud(); 
         pcl::toROSMsg(frame_pcd, raw_cloud_msg);
@@ -395,25 +375,22 @@ bool AssignmentDetector::run(int argc, char** argv)
         );
         vis.raw_cloud_publisher(raw_cloud_msg);
 
-        // background cloud
         sensor_msgs::PointCloud2 background_cloud_msg;
         pcl::PointCloud<pcl::PointXYZI> background_cloud = *frame.getBackgroundcloud(); 
         pcl::toROSMsg(background_cloud, background_cloud_msg);
         vis.background_cloud_publisher(background_cloud_msg);
 
-        // obj cloud
         for (size_t pcd_idx = 0; pcd_idx < aligned_detection_buffer.size(); pcd_idx++)
         {
             obj_cloud += aligned_detection_buffer[pcd_idx].cloud_;
         }
         sensor_msgs::PointCloud2 obj_cloud_msg;
-        pcl::toROSMsg(obj_cloud, obj_cloud_msg);
-        vis.raw_obj_cloud_publisher(obj_cloud_msg);
 
         vis.raw_img_publisher(raw_img_buffer[frame_idx].second);
 
         vis.label_img_publisher(label_img_buffer[frame_idx].second);
 
+        Timer total_timer("total time");
         fusionTracker.tracking(
             aligned_detection_buffer,
             raw_img_buffer[frame_idx].second,
@@ -422,53 +399,52 @@ bool AssignmentDetector::run(int argc, char** argv)
             obj_vel_txt_markerarray,
             &vis
         );
-
-        frame_timer.rlog("This frame cost time");
+        total_timer.rlog("total time cost:");
 
         loop_count++;
         while (1) 
         {
-            is_nextFrame_ = false;
+            is_nextFrame_ = 0;
 
             viewer_objs->spinOnce(1);
+            viewer_objs->removeAllPointClouds();
+            viewer_objs->removeAllShapes();
 
             viewer_objs->registerKeyboardCallback(&nextFrame, &is_nextFrame_);
 
             cv::waitKey(1);
 
-            if(is_nextFrame_)
+            if (is_nextFrame_ != 0)
             {
-                // viewer_objs->removeAllShapes();
-                viewer_objs->removeAllPointClouds();
-
                 break;
             }
         }
     }
+    exit(-1);
 }
 
 void nextFrame(const pcl::visualization::KeyboardEvent& event, void* val) 
 {
-    bool *pKey = (bool *)val;
+    int *pKey = (int *)val;
     if (event.keyDown()) 
     {
         if(strcmp(event.getKeySym().c_str(), "f"))
         {
-            *pKey = true;
+            *pKey = 1;
+        }
+        else if (strcmp(event.getKeySym().c_str(), "q"))
+        {
+            *pKey = 2;
         }
         else
         {
-            *pKey = false;
+            *pKey = 0;
         }
         
     }
 }
 
-void getFilesList(
-    const std::string & dirpath,
-    const bool & is_recursive,
-    std::vector<std::string> & out_filelist
-)
+std::vector<std::string> getFilesList(std::string dirpath, bool is_recursive)
 {
     DIR *dir = opendir(dirpath.c_str());
     if (dir == NULL)
@@ -495,8 +471,8 @@ void getFilesList(
                 dirNew = dirpath + entry->d_name;
                 
             }
-            std::vector<std::string> tempPath;
-            getFilesList(dirNew, !entry->d_type == DT_DIR, tempPath);
+            std::vector<std::string> tempPath = getFilesList(dirNew, 
+                !entry->d_type == DT_DIR);
             allPath.insert(allPath.end(), tempPath.begin(), tempPath.end());
 
         }
@@ -519,11 +495,38 @@ void getFilesList(
 
     }
     closedir(dir);
-    out_filelist = allPath;
-    return;
+    return allPath;
 }
 
-double GetIOU(const Cube & bb_test,const Cube & bb_gt)
+bool imgSort(const imageWithTime& left, const imageWithTime& right)
+{
+    return (left.first < right.first);
+}
+
+bool pcdSort(const pcdsWithTime& left, const pcdsWithTime& right)
+{
+    return (left.first < right.first);
+}
+bool bboxSort(const frameBboxsWithTime& left, const frameBboxsWithTime& right)
+{
+    return (left.first < right.first);
+}
+bool cubeSort(const frameCubesWithTime& left, const frameCubesWithTime& right)
+{
+    return (left.first < right.first);
+}
+bool poseSort(const pair<uint64_t, Eigen::Matrix4d>& left, 
+    const pair<uint64_t, Eigen::Matrix4d>& right)
+{
+    return (left.first < right.first);
+}
+bool pcSort(const pcl::PointCloud<pcl::PointXYZI>& left, 
+    const pcl::PointCloud<pcl::PointXYZI>& right)
+{
+    return (left.size() < right.size());
+}
+
+double GetIOU(Cube bb_test, Cube bb_gt)
 {
     /* a 2d projection iou method */
     cv::Rect_<double> box1(
@@ -548,7 +551,7 @@ double GetIOU(const Cube & bb_test,const Cube & bb_gt)
 
 }
 
-void expand_3d_detection(
+void expand_3d_cube(
     frameCubesWithTime & cubes_in
 )
 {

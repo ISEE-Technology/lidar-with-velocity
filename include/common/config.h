@@ -7,18 +7,16 @@
 #include <pcl/point_types.h>
 #include <pcl/io/pcd_io.h>
 #include <Eigen/Core>
-#include <ros/package.h>
 
 #include "yaml-cpp/yaml.h"
 
 class Config
 {
-    friend class AssignmentDetector;
+    friend class assignment;
     friend class Frame;
-    friend class Fusion_tracker;
+    friend class fusion_tracker;
     
 private:
-
     double camera_factor_ = 256.0;
     int imageRows_ = 568;
     int imageCols_ = 1520;

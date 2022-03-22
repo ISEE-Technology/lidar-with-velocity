@@ -1,5 +1,4 @@
-# YOUR DATASET PATH
-dataset_path: /home/yw/vance/git/catkin_ws/data/
+dataset_path: DATASET_PATH
 
 camera_intrinsic: [
   968.31466,0,813.0669,

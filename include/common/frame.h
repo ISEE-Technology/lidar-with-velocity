@@ -34,7 +34,7 @@
 
 #define hubLidarNum 6
 
-struct ObBbox
+struct obBBOX
 {
     std::string object_type_;
     double score_;
@@ -43,7 +43,7 @@ struct ObBbox
     int bbox_y1_;
     int bbox_y2_;
 
-    ObBbox(
+    obBBOX(
         std::string object_type,
         double score,
         int bbox_x1,
@@ -60,13 +60,13 @@ struct ObBbox
     {}
 };
 
-struct Cube3d
+struct cube3d
 {
     std::string object_type_;
     double confidence_;
     Eigen::Matrix<double, 8, 3> cube_vertexs_;
 
-    Cube3d(
+    cube3d(
         std::string object_type,
         double confidence,
         Eigen::Matrix<double, 8, 3> cube_vertexs
@@ -91,14 +91,13 @@ typedef struct alignedDet
 }alignedDet;
 
 typedef std::vector<std::pair<uint64_t, pcl::PointCloud<pcl::PointXYZRGB>>> pcdWithTime;
-typedef std::vector<ObBbox> frameBboxs;
-typedef std::vector<Cube3d> frameCubes;
+typedef std::vector<obBBOX> frameBboxs;
+typedef std::vector<cube3d> frameCubes;
 
 typedef std::pair<uint64_t, cv::Mat> imageWithTime;
 typedef std::pair<uint64_t, pcdWithTime> pcdsWithTime;
 typedef std::pair<uint64_t, frameBboxs> frameBboxsWithTime;
 typedef std::pair<uint64_t, frameCubes> frameCubesWithTime;
-typedef std::pair<uint64_t, Eigen::Matrix4d> poseWithTime;
 
 struct detection_object
 {
@@ -124,7 +123,6 @@ private:
     frameBboxs objs_;
     frameCubes cubes_;
 
-    // [0]->raw_img_time  [1]->label_img_time [2]->pcds_time [3~7]->pcd_time 
     uint64_t time_stamp_[9];
 
 
@@ -140,6 +138,8 @@ public:
         Config config
     );
     ~Frame();
+
+    bool verboseFrame();
 
     cv::Mat PointCloudToDepth(
         pcl::PointCloud<pcl::PointXYZI>::Ptr cloud_in, Config global_config);
@@ -188,12 +188,10 @@ public:
         std::vector<alignedDet> & aligned_detections
     );
 
-    // project the 3d detection result to 2d domain
     void detection3dProj2d(
-        const Cube3d * vertex3d,
+        const cube3d * vertex3d,
         cv::Rect * output
     );
-    // 3d 2d detection IoU score 
     float fusionIoU(
         const cv::Rect detection3d,
         const cv::Rect detection2d

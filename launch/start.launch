@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<launch>
+    <node name="lidar_undistortion" pkg="object_undistort" type="main_ros"/>
+
+    <node name="rviz" pkg="rviz" type="rviz" respawn="true"
+            args="-d $(find object_undistort)/rviz_cfg/vis.rviz"/>
+</launch>

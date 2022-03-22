@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.0.2)
-project(lidar-with-velocity)
+project(object_undistort)
 
 set(CMAKE_BUILD_TYPE "Release")
 set(CMAKE_CXX_STANDARD 14)
@@ -30,14 +30,14 @@ find_package(catkin REQUIRED COMPONENTS
 
 generate_messages(
   DEPENDENCIES
-  std_msgs  
+  std_msgs  # Or other packages containing msgs
   sensor_msgs
   geometry_msgs
 )
 
 catkin_package(
   INCLUDE_DIRS include
-  LIBRARIES lidar-with-velocity
+  LIBRARIES object_undistort
   CATKIN_DEPENDS roscpp rosmsg rospy
   DEPENDS system_lib
 )
@@ -49,12 +49,13 @@ include_directories(
 )
 
 add_executable(main_ros 
-  src/main.cpp
-  src/start.cpp
-  src/frame.cpp 
-  src/config.cpp
-  src/tracker.cpp 
-  src/Hungarian.cpp
+  src/main_ros.cpp
+  src/assignment/main.cpp
+  src/assignment/assignment.cpp 
+  src/assignment/frame.cpp 
+  src/assignment/config.cpp
+  src/assignment/tracker.cpp 
+  src/assignment/Hungarian.cpp
 )
 target_link_libraries(main_ros 
   ${catkin_LIBRARIES} 
