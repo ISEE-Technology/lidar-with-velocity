@@ -9,14 +9,6 @@ Frame::Frame(
     Config config
 )
 {
-    // if (
-    //     bbox.first != label_img.first || 
-    //     bbox.first != raw_img.first || 
-    //     label_img.first != raw_img.first  
-    // )
-    // {
-    //     throw("Construct ERROR! input imgs/labels/bboxs don't match!");
-    // }
 
     this->global_config_ = config;
 
@@ -110,9 +102,6 @@ pcl::PointCloud<pcl::PointXYZI>::Ptr Frame::roi_depth_to_pointcloud
     double camera_cy = global_config.camera_intrinsic_(1,2);
     int n,m;
     int r,g,b;
-    // r = (rand() % 155) + 100;
-    // g = (rand() % 155) + 100;
-    // b = (rand() % 155) + 100;
     pcl::PointCloud<pcl::PointXYZI> cloudOut;
     for (int m = y_start; m < y_start + y_len; m++)
     {
@@ -122,16 +111,9 @@ pcl::PointCloud<pcl::PointXYZI>::Ptr Frame::roi_depth_to_pointcloud
             if (d == 0) continue;
             pcl::PointXYZI p;
             p.x = d / global_config.camera_factor_;
-            // if (p.x <= 0.5 || p.x > 260) 
-            // {
-            //     continue;
-            // }
             p.y = -  (((double)n - camera_cx) * p.x / camera_fx);
             p.z = -  (((double)m - camera_cy) * p.x / camera_fy);
             p.intensity = intensity_map.at<float>(m, n);
-            // p.r = r;
-            // p.g = g;
-            // p.b = b;
             cloudOut.points.push_back(p);
         }
     }
@@ -197,7 +179,6 @@ cv::Mat Frame::PointCloudToDepth(
             }
             if(pointDepth >= 65535) pointDepth = 0;
             depthImageOut.at<uint16_t>(m,n) = pointDepth;
-            // std::cout << "depth = " << depthImageOut.at<uint16_t>(m,n) << std::endl;
         }
     }
     return depthImageOut;
@@ -236,19 +217,15 @@ cv::Mat Frame::PointCloudToDepthWithintensity(
             if(pointDepth > 120 * global_config.camera_factor_ 
                 || pointDepth < 0.0)
             {
-                // pointDepth = 0.0;
                 continue;
             }
             if(pointDepth >= 65535) 
             {
-                // pointDepth = 0;
                 continue;
             }
             depthImageOut.at<uint16_t>(m,n) = pointDepth;
             intensity_map.at<float>(m,n) = cloud_in->points[i].intensity;
 
-            // std::cout << "depth = " << depthImageOut.at<uint16_t>(m,n) << std::endl;
-            // std::cout << "intensity = " << intensity_map.at<float>(m,n) << std::endl;
         }
     }
     return depthImageOut;
@@ -258,7 +235,6 @@ void Frame::full_detection(
     pcdsWithTime * pcd_in
 )
 {
-    // 相对于basetime的偏移时间
     double basetime = pcd_in->first / 1000000000.0;
     float offsettime[6] = {0.0,0.0,0.0,0.0,0.0,0.0};
     for (size_t cloudidx = 0; cloudidx < 6; cloudidx++)
@@ -267,8 +243,6 @@ void Frame::full_detection(
         offsettime[cloudidx] = offset64 - basetime;
     }
 
-    // 相对于cloud第一个点的偏移时间
-    // -----------------get point time----------------- 
     vector<pcl::PointCloud<pcl::PointXYZI>> pcds_xyzi_buffer;
     pcl::PointCloud<pcl::PointXYZI> frame_pcd;
     for (size_t pcd_idx = 0; pcd_idx < pcd_in->second.size(); pcd_idx++)
@@ -291,8 +265,6 @@ void Frame::full_detection(
         );
 
         int pointssize = pcd_in->second[pcd_idx].second.size();
-        // std::cout << "time \"" << pcd_buffer[frame_idx].second[pcd_idx].first << "\' : " 
-        //     << pointssize << std::endl;
         float step_t = 0.1 / (float)pointssize;
 
         pcl::PointCloud<pcl::PointXYZI> pcd_xyzi;
@@ -302,7 +274,6 @@ void Frame::full_detection(
             point_temp.x = pcd_in->second[pcd_idx].second[pointidx].x;
             point_temp.y = pcd_in->second[pcd_idx].second[pointidx].y;
             point_temp.z = pcd_in->second[pcd_idx].second[pointidx].z;
-            // intensity 表示需要偏移的时间 单位s 
             point_temp.intensity = (float)pointidx * step_t + (float)offsettime[pcd_idx];
             pcd_xyzi.push_back(point_temp);
             // std::cout << "time : " << point_temp.intensity << std::endl;
@@ -312,7 +283,6 @@ void Frame::full_detection(
     }
     frame_detections_.cloud_ = frame_pcd;
 
-    // 背景点云与检测后的目标点云
     frame_detections_.cloud_objects_buffer_.resize(cubes_.size());
     point_extraction(
         frame_detections_.cloud_.makeShared(),
@@ -329,7 +299,6 @@ void Frame::point_extraction(
     vector<pcl::PointCloud<pcl::PointXYZI>> * obj_cloud
 )
 {
-    // 区分点是否在3d检测框内
     for (size_t pt_idx = 0; pt_idx < cloud_->size(); pt_idx++)
     {
         bool is_background = true;
@@ -383,7 +352,6 @@ void Frame::point_extraction(
                 (*cubes)[obj_idx].cube_vertexs_(0,2) - (*cubes)[obj_idx].cube_vertexs_(4,2)
             );
 
-            // 內积乘积为负 
             if (
                 cloud_->points[pt_idx].z > -2.0 &&
                 nor1.dot(vec0) * nor1.dot(vec1) < 0 &&
@@ -419,8 +387,6 @@ void Frame::detection_align(
     cv::Mat raw_img = *rawimg_;
     cv::Mat test_img; 
     rawimg_->copyTo(test_img);
-    // proj all the 3d detection to 2d domain
-    // cubes_ => proj2dvertex_buffer 
     for (size_t obj_idx = 0; obj_idx < cubes_->size(); obj_idx++)
     {
         cv::Rect proj2dvertex;
@@ -432,12 +398,6 @@ void Frame::detection_align(
 
         obj_cloud_buffer.push_back((*obj_cloud_)[obj_idx]);
 
-        // cv::rectangle(
-        //     test_img, 
-        //     proj2dvertex_buffer[obj_idx], 
-        //     cv::Scalar(255,0,0),
-        //     3, cv::LINE_8, 0
-        // );
     }
 
     vector<vector<double>> iouMatrix;
@@ -446,27 +406,7 @@ void Frame::detection_align(
     {
         for (size_t obj3d_idx = 0; obj3d_idx < cubes_->size(); obj3d_idx++)
         {
-            // TODO 两个检测系统的类别可能不同 需再次检查
-
             float iou_tmp = 0.0;
-            // if (
-            //     std::strcmp(
-            //         (*objs_)[obj2d_idx].object_type_.c_str(),
-            //         (*cubes_)[obj3d_idx].object_type_.c_str()
-            //     )
-            // )
-            // {
-            //     iouMatrix[obj2d_idx][obj3d_idx] = 1.0;
-            //     continue;
-            // }
-            // if (
-            //     (*objs_)[obj2d_idx].score_ < 0.6 ||
-            //     (*cubes_)[obj3d_idx].confidence_ < 0.8
-            // )
-            // {
-            //     iouMatrix[obj2d_idx][obj3d_idx] = 1.0;
-            //     continue;
-            // }
             cv::Rect rect2d(
                 (*objs_)[obj2d_idx].bbox_y1_, 
                 (*objs_)[obj2d_idx].bbox_x1_,
@@ -478,18 +418,9 @@ void Frame::detection_align(
                 rect2d
             );
             iouMatrix[obj2d_idx][obj3d_idx] = 1.0 - (double)iou_tmp;
-            // std::cout << (*objs_)[obj2d_idx].object_type_
-            //     << " " << (*cubes_)[obj3d_idx].object_type_
-            //     << " " << obj2d_idx
-            //     << " " << obj3d_idx
-            //     << " " << (*objs_)[obj2d_idx].score_
-            //     << " " << (*cubes_)[obj3d_idx].confidence_
-            //     << "   iouscore=" << iou_tmp
-            //     << std::endl;
         }
     }
 
-    // HungarianAlgorithm 求解最佳2d 3d detection关联
     vector<cv::Point> matchPairs;
     findHungarianAssignment(iouMatrix, matchPairs);
 
@@ -516,7 +447,6 @@ void Frame::detection_align(
         alignedDet aligneddet_tmp;
         aligneddet_tmp.type_ = (*cubes_)[idx_3d].object_type_;
         aligneddet_tmp.confidence3d_ = (*cubes_)[idx_3d].confidence_;
-        // 3d cube vertexs can not be aligned
         aligneddet_tmp.vertex3d_ = (*cubes_)[idx_3d].cube_vertexs_;
         aligneddet_tmp.vertex2d_ = obj_bbox;
         aligneddet_tmp.confidence2d_ = (*objs_)[idx_2d].score_;
@@ -527,7 +457,6 @@ void Frame::detection_align(
         aligneddet_buffer.push_back(aligneddet_tmp);
     }
     aligned_detections = aligneddet_buffer;
-    // the matchpairs size sometimes are smaller than the above twos
 }
 
 void Frame::detection3dProj2d(
@@ -542,7 +471,6 @@ void Frame::detection3dProj2d(
     double camera_cx = global_config_.camera_intrinsic_(0,2);
     double camera_cy = global_config_.camera_intrinsic_(1,2);
     int n,m;
-    // 八个点投影到camera平面上
     for (size_t vertex_idx = 0; vertex_idx < vertex3d->cube_vertexs_.rows(); vertex_idx++)
     {
         Eigen::Vector4d point_camera(
@@ -560,7 +488,6 @@ void Frame::detection3dProj2d(
         projPointsM.push_back(m);
     }
 
-    // 最大rectangle 四点
     std::sort(projPointsN.begin(), projPointsN.end());
     std::sort(projPointsM.begin(), projPointsM.end());
 
@@ -615,12 +542,10 @@ void Frame::findHungarianAssignment(
             matchedItems.begin(), matchedItems.end(),
             insert_iterator<set<int>>(unmatchedDetections, unmatchedDetections.begin()));
     }
-    // 检测数量少于tracker数量 
     else if (iouMatrix_[0].size() < iouMatrix_.size()) // there are unmatched trajectory/predictions
     {
         for (unsigned int i = 0; i < iouMatrix_.size(); ++i)
         {
-            // unassigned label will be set as -1 in the assignment algorithm
             if (HungariaAssignment[i] == -1) 
                 unmatchedTrajectories.insert(i);
         }
@@ -632,8 +557,6 @@ void Frame::findHungarianAssignment(
             continue;
         if (1 - iouMatrix_[i][HungariaAssignment[i]] < 0.01)
         {
-            // std::cout << "1 - iouMatrix[i][HungariaAssignment[i]] = " 
-            //     << 1 - iouMatrix_[i][HungariaAssignment[i]] << std::endl;
             unmatchedTrajectories.insert(i);
             unmatchedDetections.insert(HungariaAssignment[i]);
         }
@@ -698,7 +621,6 @@ void VisHandel::txt_marker_3d_publisher(
     cube_3d_msg.color.a = 1.0;
     cube_3d_msg.lifetime = ros::Duration(0);
 
-    // all detection cubes 
     for (size_t ob_idx = 0; ob_idx < detection_in.size(); ob_idx++)
     {
         for (size_t line_idx = 0; line_idx < lines.rows(); line_idx++)

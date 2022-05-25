@@ -122,7 +122,9 @@ private:
     pcl::PointCloud<pcl::PointXYZRGB> frame_pointcloud_;
     frameBboxs objs_;
     frameCubes cubes_;
+    // Cube
 
+    // [0]->raw_img_time  [1]->label_img_time [2]->pcds_time [3~7]->pcd_time 
     uint64_t time_stamp_[9];
 
 
@@ -188,10 +190,12 @@ public:
         std::vector<alignedDet> & aligned_detections
     );
 
+    // project the 3d detection result to 2d domain
     void detection3dProj2d(
         const cube3d * vertex3d,
         cv::Rect * output
     );
+    // 3d 2d detection IoU score 
     float fusionIoU(
         const cv::Rect detection3d,
         const cv::Rect detection2d

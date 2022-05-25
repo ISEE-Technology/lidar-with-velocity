@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 3.0.2)
 project(object_undistort)
 
 set(CMAKE_BUILD_TYPE "Release")
-set(CMAKE_CXX_STANDARD 14)
+set(CMAKE_CXX_STANDARD 17)
 SET(CMAKE_CXX_COMPILER /usr/bin/g++)
 
 find_package(PCL 1.8 REQUIRED)
@@ -30,7 +30,7 @@ find_package(catkin REQUIRED COMPONENTS
 
 generate_messages(
   DEPENDENCIES
-  std_msgs  # Or other packages containing msgs
+  std_msgs  
   sensor_msgs
   geometry_msgs
 )

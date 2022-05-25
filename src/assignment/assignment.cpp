@@ -2,21 +2,26 @@
 
 assignment::assignment(int argc, char** argv)
 {
-    if(!config_.readParam())
+    ros::init(argc, argv, "lidar_with_velocity");
+    ros::NodeHandle nh;
+
+    // read the param
+    if(!config_.readParam(nh))
     {
         std::cout << "ERROR! read param fail!" << std::endl;
         exit(1);
     }
 
-    run(argc, argv);
+    
+
+    run(argc, argv, nh);
 }
 
 assignment::~assignment(){}
 
-bool assignment::run(int argc, char** argv)
+bool assignment::run(int argc, char** argv, ros::NodeHandle & nh)
 {
-    ros::init(argc, argv, "lidar_with_velocity");
-    ros::NodeHandle nh;
+    
     VisHandel vis(nh);
 
     std::vector<cv::String> raw_img_fn;
@@ -300,7 +305,6 @@ bool assignment::run(int argc, char** argv)
 
     std::cout << "readed pose : " << pose_buffer.size() << "\n\n";
 
-
     if(pcd_buffer.size() == raw_img_buffer.size() 
         && pcd_buffer.size() == label_img_buffer.size())
     {
@@ -326,10 +330,10 @@ bool assignment::run(int argc, char** argv)
     size_t loop_count = 0;
     std::vector<pcl::PointCloud<pcl::PointXYZRGB>> final_last_pcs;
     visualization_msgs::MarkerArray obj_vel_txt_markerarray;
+
     for (size_t frame_idx = 0; frame_idx < pcd_buffer.size(); ++frame_idx)
     {
-        cout << "=========================== seq:" << 
-            frame_idx + 1 << " ===========================" << endl;
+        cout << "=========================== seq:" << frame_idx + 1 << " ===========================" << endl;
 
         expand_3d_cube(detection_3d_buffer[frame_idx]);
 
@@ -385,6 +389,8 @@ bool assignment::run(int argc, char** argv)
             obj_cloud += aligned_detection_buffer[pcd_idx].cloud_;
         }
         sensor_msgs::PointCloud2 obj_cloud_msg;
+        // pcl::toROSMsg(obj_cloud, obj_cloud_msg);
+        // vis.raw_obj_cloud_publisher(obj_cloud_msg);
 
         vis.raw_img_publisher(raw_img_buffer[frame_idx].second);
 
@@ -401,14 +407,14 @@ bool assignment::run(int argc, char** argv)
         );
         total_timer.rlog("total time cost:");
 
+
         loop_count++;
         while (1) 
         {
             is_nextFrame_ = 0;
 
             viewer_objs->spinOnce(1);
-            viewer_objs->removeAllPointClouds();
-            viewer_objs->removeAllShapes();
+            // viewer_objs->removeAllShapes();
 
             viewer_objs->registerKeyboardCallback(&nextFrame, &is_nextFrame_);
 
@@ -416,6 +422,7 @@ bool assignment::run(int argc, char** argv)
 
             if (is_nextFrame_ != 0)
             {
+                viewer_objs->removeAllPointClouds();
                 break;
             }
         }

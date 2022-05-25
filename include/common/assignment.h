@@ -46,7 +46,7 @@ public:
     assignment(int argc, char** argv);
     ~assignment();
 
-    bool run(int argc, char** argv);
+    bool run(int argc, char** argv, ros::NodeHandle & nh);
     int is_nextFrame_ = 0;
 };
 

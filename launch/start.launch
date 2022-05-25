@@ -1,6 +1,9 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <launch>
-    <node name="lidar_undistortion" pkg="object_undistort" type="main_ros"/>
+
+	<param name="cfig_path" type="string" value="$(find object_undistort)/config/config.yaml" />
+
+    <node name="lidar_undistortion" pkg="object_undistort" type="main_ros" output="screen"/>
 
     <node name="rviz" pkg="rviz" type="rviz" respawn="true"
             args="-d $(find object_undistort)/rviz_cfg/vis.rviz"/>

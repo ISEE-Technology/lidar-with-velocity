@@ -2,30 +2,8 @@
 
 #include "tracker/tracker.h"
 
+
 int kfTracker::kf_count = 0;
-
-bool plane_judge(
-	float a, float b, float c
-)
-{
-	float coeff = 10.0;
-	std::vector<float> vec;
-	vec.push_back(a);
-	vec.push_back(b);
-	vec.push_back(c);
-
-	std::sort(vec.begin(), vec.end());
-
-	if (vec[2] > coeff * vec[0] && vec[1] > coeff * vec[0])
-	{
-		return true;
-	}
-	else
-	{
-		return false;
-	}
-
-}
 
 class localOptimizer
 {
@@ -197,6 +175,7 @@ template<typename T>
 			(base[0] * cur_x + 
             base[1] * cur_y + 
             base[2] * cur_z);
+			// 
 			T base1_x = weight1 * dir_[0];
 			T base1_y = weight1 * dir_[1];
 			T base1_z = weight1 * dir_[2];
@@ -340,7 +319,6 @@ private:
     double ptsize_;
 };
 
-// ======================== kfTracker ========================
 alignedDet kfTracker::predict()
 {
 	cv::Mat p = kf_.predict();
@@ -394,6 +372,7 @@ void kfTracker::init_kf(
 	kf_.statePost.at<float>(5, 0) = state_[5];
 	kf_.statePost.at<float>(6, 0) = state_[6];
 
+	// detection_last_ = detection_cur_;
 	detection_cur_ = detection_in;
 
 	rgb3[0] = (rand() % 255) + 0;
@@ -479,10 +458,9 @@ void kfTracker::update(
 
 	kf_.correct(measurement_);
 
+	detection_last_2_ = detection_last_;
 	detection_last_ = detection_cur_;
 	detection_cur_ = detection_in;
-
-
 }
 
 void kfTracker::get_kf_vel(
@@ -536,6 +514,7 @@ void fusion_tracker::tracking(
 	VisHandel * vis_ros_
 )
 {
+	std::cout << "--------------- tracking log ---------------" << std::endl;
 	Timer tracker_timer("tracking time");
 	total_frames_++;
 	frame_count_++;
@@ -548,6 +527,8 @@ void fusion_tracker::tracking(
 		}
 		if(frame_count_ = 1)
 		{
+			std::cout << "last frame tracker all fail!" << std::endl;
+			std::cout << "first tracking frame" << std::endl;
 			last_detection_ = detections_in;
 			last_img_ = img_in;
 			return;
@@ -561,6 +542,8 @@ void fusion_tracker::tracking(
 	{
 		std::cout << "last tracker num = " << trackers_.size() << std::endl;
 	}
+	std::cout << "NEW detected obj in current frame = " 
+		<< detections_in.size() << std::endl;
 	
 	predictedBoxes_.clear();
 
@@ -579,6 +562,7 @@ void fusion_tracker::tracking(
 			cerr << "Box invalid at frame: " << frame_count_ << endl;
 		}
 	}
+	std::cout << "predicted success num = " << predictedBoxes_.size() << std::endl;
 
 	trkNum_ = predictedBoxes_.size();
 	detNum_ = detections_in.size();
@@ -619,10 +603,10 @@ void fusion_tracker::tracking(
 			insert_iterator<set<int>>(unmatchedDetections_, unmatchedDetections_.begin())
 		);
 	}
-	else if (detNum_ < trkNum_) // there are unmatched trajectory/predictions
+	else if (detNum_ < trkNum_) 
 	{
 		for (unsigned int i = 0; i < trkNum_; ++i)
-			if (HungariaAssignment_[i] == -1) // unassigned label will be set as -1 in the assignment algorithm
+			if (HungariaAssignment_[i] == -1) 
 				unmatchedTrajectories_.insert(i);
 	}
 	else;
@@ -630,7 +614,7 @@ void fusion_tracker::tracking(
 	matchedPairs_.clear();
 	for (unsigned int i = 0; i < trkNum_; ++i)
 	{
-		if (HungariaAssignment_[i] == -1) // pass over invalid values
+		if (HungariaAssignment_[i] == -1) 
 			continue;
 		if (1 - iouMatrix_[i][HungariaAssignment_[i]] < iouThreshold_)
 		{
@@ -643,6 +627,7 @@ void fusion_tracker::tracking(
 		}
 	}
 
+	std::cout << "matchedPairs num = " << matchedPairs_.size() << std::endl;
 	vector<alignedDet> match_trackers;
 	vector<alignedDet> match_detections;
 	for (unsigned int i = 0; i < matchedPairs_.size(); i++)
@@ -654,6 +639,7 @@ void fusion_tracker::tracking(
 		match_detections.push_back(detections_in[detIdx]);
 	}
 
+	std::cout << "unmatchedDetections num = " << unmatchedDetections_.size() << std::endl;
 	for (auto umd : unmatchedDetections_)
 	{
 		kfTracker new_tracker(detections_in[umd]);
@@ -661,8 +647,14 @@ void fusion_tracker::tracking(
 	}
 	tracker_timer.rlog("tracking cost time");
 
+	if (matchedPairs_.size() == 0)
+	{
+		return;
+	}
+
 	std::vector<Eigen::Vector2d> obj_means;
 	std::vector<Eigen::Matrix2d> obj_covariances;
+	Timer optical_estimator_timer("optical_estimator time");
 	optical_estimator(
 		last_img_, 
 		img_in, 
@@ -672,7 +664,8 @@ void fusion_tracker::tracking(
 		obj_means,
 		obj_covariances
 	);
-
+	optical_estimator_timer.rlog("optical_estimator cost time");
+	std::cout << "--------------- tracking log ---------------" << std::endl;
 
 	pcl::PointCloud<pcl::PointXYZRGB>::Ptr undistorted_obj_clouds(new pcl::PointCloud<pcl::PointXYZRGB>);
 	pcl::PointCloud<pcl::PointXYZRGB>::Ptr raw_obj_clouds(new pcl::PointCloud<pcl::PointXYZRGB>);
@@ -697,8 +690,8 @@ void fusion_tracker::tracking(
 		vis_ros_->obj_vel_txt_publisher(obj_vel_txt_markerarray);
 		obj_vel_txt_markerarray.markers.clear();
 	}
-	
 
+	Timer point_estimator_timer("point_estimator time");
 	for (size_t obj_idx = 0; obj_idx < match_trackers.size(); obj_idx++)
 	{
 		int detIdx, trkIdx;
@@ -730,12 +723,13 @@ void fusion_tracker::tracking(
 		Eigen::Vector3d fused_vel;
 		Eigen::Matrix3d fused_vel_cov;
 		Eigen::Vector3d points_vel;
+		Eigen::Matrix3d points_vel_cov;
 		points_estimator(
 			viewer,
-			trackers_[trkIdx].detection_last_,
 			match_trackers[obj_idx], 
 			match_detections[obj_idx],
 			points_vel,
+			points_vel_cov,
 			obj_means[obj_idx],
 			obj_covariances[obj_idx],
 			&trackers_[trkIdx],
@@ -743,26 +737,29 @@ void fusion_tracker::tracking(
 			fused_vel_cov,
 			config_
 		);
+
 		trackers_[trkIdx].update(
 			detections_in[detIdx],
 			fused_vel,
 			fused_vel_cov
 		);
-		Eigen::Vector3d out_vel;
-		trackers_[trkIdx].get_kf_vel(out_vel);
+		Eigen::Vector3d undistorted_vel;
+
+		trackers_[trkIdx].get_kf_vel(undistorted_vel);
 		trackers_[trkIdx].update_estimated_vel();
 
-		Eigen::Vector3d vel = out_vel;
 		cloud_undistortion(
+			trkIdx,
 			trackers_[trkIdx],
 			detections_in[detIdx],
-			out_vel,
+			undistorted_vel,
 			undistorted_obj_clouds,
 			raw_obj_clouds,
-			obj_vel_arrow,
 			obj_vel_txt_markerarray
 		);
+
 	}
+	point_estimator_timer.rlog("point_estimator cost time");
 
 	sensor_msgs::PointCloud2::Ptr undistorted_obj_cloud_msg(new sensor_msgs::PointCloud2);
 	pcl::toROSMsg(*undistorted_obj_clouds, *undistorted_obj_cloud_msg);
@@ -823,7 +820,6 @@ double fusion_tracker::GetIOU(
 	const alignedDet & bb_gt
 )
 {
-	/* a 2d projection iou method */
     cv::RotatedRect rect1;
 	alignedDet2rotaterect(bb_test, rect1);
     cv::RotatedRect rect2;
@@ -1058,10 +1054,10 @@ void fusion_tracker::optical_estimator(
 
 void fusion_tracker::points_estimator(
 	boost::shared_ptr<pcl::visualization::PCLVisualizer> viewer,
-	const alignedDet & pp_detection,
 	const alignedDet & prev_detection,
 	const alignedDet & cur_detection,
 	Eigen::Vector3d & optimal_vel,
+	Eigen::Matrix3d & optimal_vel_cov,
 	const Eigen::Vector2d & pix_vel,
 	const Eigen::Matrix2d & pix_vel_cov,
 	kfTracker * tracker,
@@ -1082,58 +1078,140 @@ void fusion_tracker::points_estimator(
 
 	Eigen::Vector3d target_centroid = cur_detection.vertex3d_.colwise().mean();
 
-	pcl::PointXYZ arrow_start, arrow_end;
-	arrow_start.x = target_centroid[0];
-	arrow_start.y = target_centroid[1];
-	arrow_start.z = target_centroid[2];
-	Eigen::Vector3d cube_side_1, cube_side_2;
-	cube_side_1[0] = cur_detection.vertex3d_(0, 0) - cur_detection.vertex3d_(3, 0);
-	cube_side_1[1] = cur_detection.vertex3d_(0, 1) - cur_detection.vertex3d_(3, 1);
-	cube_side_1[2] = cur_detection.vertex3d_(0, 2) - cur_detection.vertex3d_(3, 2);
-	cube_side_2[0] = cur_detection.vertex3d_(0, 0) - cur_detection.vertex3d_(1, 0);
-	cube_side_2[1] = cur_detection.vertex3d_(0, 1) - cur_detection.vertex3d_(1, 1);
-	cube_side_2[2] = cur_detection.vertex3d_(0, 2) - cur_detection.vertex3d_(1, 2);
-	Eigen::Vector3d cube_side_start, cube_side_end;
-	if (cube_side_1.norm() > cube_side_2.norm())
-	{
-		arrow_end.x = arrow_start.x + cube_side_1[0];
-		arrow_end.y = arrow_start.y + cube_side_1[1];
-		arrow_end.z = arrow_start.z + cube_side_1[2];
-		cube_side_start[0] = arrow_end.x;
-		cube_side_start[1] = arrow_end.y;
-		cube_side_start[2] = arrow_end.z;
-		cube_side_end[0] = arrow_start.x - cube_side_1[0];
-		cube_side_end[1] = arrow_start.y - cube_side_1[1];
-		cube_side_end[2] = arrow_start.z - cube_side_1[2];
-	}
-	else
-	{
-		arrow_end.x = arrow_start.x + cube_side_2[0];
-		arrow_end.y = arrow_start.y + cube_side_2[1];
-		arrow_end.z = arrow_start.z + cube_side_2[2];
-		cube_side_start[0] = arrow_end.x;
-		cube_side_start[1] = arrow_end.y;
-		cube_side_start[2] = arrow_end.z;
-		cube_side_end[0] = arrow_start.x - cube_side_1[0];
-		cube_side_end[1] = arrow_start.y - cube_side_1[1];
-		cube_side_end[2] = arrow_start.z - cube_side_1[2];
-	}
-	Eigen::Vector3d optimal_direction(
-		arrow_end.x - arrow_start.x,
-		arrow_end.y - arrow_start.y,
-		arrow_end.z - arrow_start.z
+	Eigen::Vector3d optimal_direction;
+	get_bbox_length(
+		cur_detection.vertex3d_,
+		optimal_direction
 	);
-	optimal_direction.normalize();
-	arrow_end.x = arrow_start.x + optimal_direction[0];
-	arrow_end.y = arrow_start.y + optimal_direction[1];
-	arrow_end.z = arrow_start.z + optimal_direction[2];
 
+	Eigen::Vector3d points_vel;
+	points_vel.setZero();
+	Eigen::Matrix3d points_vel_cov;
+	points_vel_cov.setIdentity();
+
+	pcl::PointCloud<pcl::PointXYZI> pc;
+	pc = cur_detection.cloud_;
+
+	points_opti(
+		viewer,
+		optimal_direction,
+		target_centroid,
+		pc,
+		points_vel,
+		points_vel_cov,
+		2.0
+	);
+
+
+	Eigen::Vector3f last_center = prev_detection.vertex3d_.colwise().mean().cast<float>();
+	Eigen::Vector3f cur_center = cur_detection.vertex3d_.colwise().mean().cast<float>();
+
+	Eigen::Vector4f last_center_vec(last_center(0), last_center(1), last_center(2), 1);
+	Eigen::Vector4f cur_center_vec(cur_center(0), cur_center(1), cur_center(2), 1);
+
+	last_center_vec = prev_detection.global_pose_.inverse().cast<float>() * last_center_vec;
+	cur_center_vec = cur_detection.global_pose_.inverse().cast<float>() * cur_center_vec;
+
+	Eigen::Vector3d points_initial_vel;
+	points_initial_vel = (cur_center_vec - last_center_vec).head(3).cast<double>() / 0.10;
+
+	pcl::PointCloud<pcl::PointXYZI> with_frames_pc;
+	with_frames_pc = cur_detection.cloud_;
+	pcl::PointXYZI pt_tmp;
+
+	for (size_t i = 0; i < prev_detection.cloud_.size() * 0.16; i++)
+	{
+		pt_tmp = prev_detection.cloud_.points[i];
+
+		Eigen::Vector4d pt_eigen(pt_tmp.x, pt_tmp.y, pt_tmp.z, 1.0);
+
+		pt_eigen = cur_detection.global_pose_ * prev_detection.global_pose_.inverse() * pt_eigen;
+		pt_tmp.x = pt_eigen[0];
+		pt_tmp.y = pt_eigen[1];
+		pt_tmp.z = pt_eigen[2];
+		pt_tmp.intensity -= 0.1;
+
+		with_frames_pc.push_back(pt_tmp);
+	}
+	for (size_t i = 0; i < with_frames_pc.size(); i++)
+	{
+		pt_tmp = with_frames_pc.points[i];
+
+		pt_tmp.x = 
+			pt_tmp.x - points_vel[0] * pt_tmp.intensity;
+		pt_tmp.y = 
+			pt_tmp.y - points_vel[1] * pt_tmp.intensity;
+		pt_tmp.z = 
+			pt_tmp.z - points_vel[2] * pt_tmp.intensity;
+
+		with_frames_pc.points[i] = pt_tmp;
+	}
+
+	std::string name = std::to_string(rand());
+	viewer->addPointCloud<pcl::PointXYZI>(
+			with_frames_pc.makeShared(),
+			name
+		);
+		viewer->setPointCloudRenderingProperties(
+			pcl::visualization::PCL_VISUALIZER_POINT_SIZE, 5, name);
+
+	Eigen::Vector3d opt_v1 = points_vel;
+
+	points_opti(
+		viewer,
+		points_vel,
+		target_centroid,
+		with_frames_pc,
+		points_vel,
+		points_vel_cov,
+		1.0
+	);
+	Eigen::Vector3d opt_v2 = opt_v1 + points_vel;
+	points_vel = opt_v2;
+
+	Eigen::Vector3d fusion_vel;
+	Eigen::Matrix3d fusion_vel_cov;
+	vel_fusion(
+		cur_detection,
+		prev_detection,
+		points_vel,
+		points_vel_cov,
+		pix_vel,
+		pix_vel_cov,
+		fusion_vel,
+		fusion_vel_cov,
+		config_
+	);
+
+	if (std::isnan(fusion_vel(0)) || std::isnan(fusion_vel(1)) || std::isnan(fusion_vel(2)))
+	{
+		fusion_vel = tracker->estimated_vel_;
+	}
+
+	fused_vel = fusion_vel;
+	fused_vel_cov = fusion_vel_cov;
+
+	optimal_vel = points_vel;
+	optimal_vel_cov = points_vel_cov;
+}
+
+void fusion_tracker::points_opti(
+	boost::shared_ptr<pcl::visualization::PCLVisualizer> viewer,
+	const Eigen::Vector3d & optimal_direction,
+	Eigen::Vector3d & target_centroid,
+	const pcl::PointCloud<pcl::PointXYZI> & cloud,
+	Eigen::Vector3d & points_vel,
+	Eigen::Matrix3d & points_vel_cov,
+	double octree_size
+)
+{
+	
 	Eigen::Vector3d estimated_v_init = optimal_direction;
 	ceres::Problem vel_problem;
 	ceres::LossFunction* loss_function = new ceres::HuberLoss(1.0);
 
-	pcl::octree::OctreePointCloudPointVector<pcl::PointXYZI> octree(1.0);
-	octree.setInputCloud(cur_detection.cloud_.makeShared());
+	pcl::octree::OctreePointCloudPointVector<pcl::PointXYZI> octree(octree_size);
+	octree.setInputCloud(cloud.makeShared());
 	octree.addPointsFromInputCloud();
 	std::vector<std::vector<int> > voxel_buffer;
 	for (auto it = octree.leaf_begin(), it_end = octree.leaf_end(); it != it_end; ++it)
@@ -1156,16 +1234,13 @@ void fusion_tracker::points_estimator(
 		for (size_t pt_idx = 0; pt_idx < voxel_buffer[vox_idx].size(); pt_idx++)
 		{
 			pcl::PointXYZRGB pt_tmp;
-			pcl::PointXYZI pti_tmp = cur_detection.cloud_.points[voxel_buffer[vox_idx][pt_idx]];
-			pt_tmp.x = cur_detection.cloud_.points[voxel_buffer[vox_idx][pt_idx]].x;
-			pt_tmp.y = cur_detection.cloud_.points[voxel_buffer[vox_idx][pt_idx]].y;
-			pt_tmp.z = cur_detection.cloud_.points[voxel_buffer[vox_idx][pt_idx]].z;
+			pcl::PointXYZI pti_tmp = cloud.points[voxel_buffer[vox_idx][pt_idx]];
+			pt_tmp.x = cloud.points[voxel_buffer[vox_idx][pt_idx]].x;
+			pt_tmp.y = cloud.points[voxel_buffer[vox_idx][pt_idx]].y;
+			pt_tmp.z = cloud.points[voxel_buffer[vox_idx][pt_idx]].z;
 			pt_tmp.r = rand_r;
 			pt_tmp.g = rand_g;
 			pt_tmp.b = rand_b;
-			// pt_tmp.r = 255;
-			// pt_tmp.g = 0;
-			// pt_tmp.b = 0;
 			colored_cloud.push_back(pt_tmp);
 			cloud_tmp.push_back(pti_tmp);
 		}
@@ -1181,12 +1256,6 @@ void fusion_tracker::points_estimator(
 		}
 
 		std::string name = std::to_string(rand());
-		viewer->addPointCloud<pcl::PointXYZRGB>(
-			voxel_colored_cloud[vox_idx].makeShared(),
-			name
-		);
-		viewer->setPointCloudRenderingProperties(
-			pcl::visualization::PCL_VISUALIZER_POINT_SIZE, 3, name);
 
 		ceres::CostFunction* cost_function;
 
@@ -1206,7 +1275,7 @@ void fusion_tracker::points_estimator(
 	ceres::CostFunction* cost_function;
 	cost_function = globalOptimizer::Create(
 		target_centroid,
-		cur_detection.cloud_,
+		cloud,
 		optimal_direction
 	);
 
@@ -1220,6 +1289,7 @@ void fusion_tracker::points_estimator(
 	options.max_num_iterations = 50;
 	options.linear_solver_type = ceres::SPARSE_NORMAL_CHOLESKY;
 	options.max_num_line_search_step_size_iterations = 10;
+	// options.minimizer_progress_to_stdout = true;
 	options.logging_type = ceres::SILENT;
 
 	ceres::Solver::Summary summary;
@@ -1227,7 +1297,6 @@ void fusion_tracker::points_estimator(
 	ceres::Solve(options, &vel_problem, &summary);
 	chrono::steady_clock::time_point t2 = chrono::steady_clock::now();
 	chrono::duration<double> time_used = chrono::duration_cast<chrono::duration<double>>(t2 - t1);
-
 
 	Eigen::Matrix<double, 3, 3> cov_vel_optimized;
 
@@ -1245,25 +1314,9 @@ void fusion_tracker::points_estimator(
 		cov_vel_optimized.data()
 	);
 
+	points_vel = estimated_v_init;
+	points_vel_cov = cov_vel_optimized;
 
-	Eigen::Vector3d points_vel = estimated_v_init;
-	Eigen::Matrix3d points_vel_cov = cov_vel_optimized;
-	Eigen::Vector3d fusion_vel;
-	Eigen::Matrix3d fusion_vel_cov;
-	vel_fusion(
-		cur_detection,
-		prev_detection,
-		points_vel,
-		points_vel_cov,
-		pix_vel,
-		pix_vel_cov,
-		fusion_vel,
-		fusion_vel_cov,
-		config_
-	);
-
-	fused_vel = fusion_vel;
-	fused_vel_cov = fusion_vel_cov;
 }
 
 void fusion_tracker::vel_fusion(
@@ -1319,7 +1372,7 @@ void fusion_tracker::vel_fusion(
 	pix_cov_3d(0,0) = 1.0;
 	pix_cov_3d(1,1) = pix_vel_cov(0,0);
 	pix_cov_3d(2,2) = pix_vel_cov(1,1);
-	pix_cov_3d = 100.0 * cur_centroid[0] * cur_centroid[0] * uv2xyz_jacob * pix_cov_3d * uv2xyz_jacob;
+	pix_cov_3d = cur_centroid[0] * cur_centroid[0] * uv2xyz_jacob * pix_cov_3d * uv2xyz_jacob;
 
 	Eigen::Vector3d base_radial(
 		cur_centroid[0],
@@ -1348,12 +1401,12 @@ void fusion_tracker::vel_fusion(
 }
 
 void cloud_undistortion(
+	int track_id,
 	const kfTracker & tracker,
     const alignedDet detection_in,
     const Eigen::Vector3d vel_,
 	pcl::PointCloud<pcl::PointXYZRGB>::Ptr clouds_buffer,
 	pcl::PointCloud<pcl::PointXYZRGB>::Ptr raw_clouds_buffer,
-	visualization_msgs::Marker & arrow_buffer,
 	visualization_msgs::MarkerArray & txt_buffer
 )
 {
@@ -1436,9 +1489,62 @@ void cloud_undistortion(
 	txt_pose.position.x = target_centroid[0];
 	txt_pose.position.y = target_centroid[1];
 	txt_pose.position.z = target_centroid[2] + 3.0;
-	std::ostringstream vel_txt;
-	vel_txt << vel_.norm() * 3.6;
-	obj_vel_txt.text = vel_txt.str().substr(0,2) + "km/h";
+	std::ostringstream vel_txt, vel_num;
+	vel_txt << "id " << track_id << ": ";
+	vel_num << vel_.norm() * 3.6;
+	obj_vel_txt.text = vel_txt.str() + vel_num.str().substr(0,2) + "km/h";
 	obj_vel_txt.pose = txt_pose;
 	txt_buffer.markers.push_back(obj_vel_txt);
+}
+
+void fusion_tracker::get_bbox_length(
+	const Eigen::Matrix<double, 8, 3> & bbox_vertices,
+	Eigen::Vector3d & out_dir
+){
+	Eigen::Vector3d target_centroid = bbox_vertices.colwise().mean();
+	pcl::PointXYZ arrow_start, arrow_end;
+	arrow_start.x = target_centroid[0];
+	arrow_start.y = target_centroid[1];
+	arrow_start.z = target_centroid[2];
+
+	Eigen::Vector3d cube_side_1, cube_side_2;
+	Eigen::Vector3d cube_side_start, cube_side_end;
+	cube_side_1[0] = bbox_vertices(0, 0) - bbox_vertices(3, 0);
+	cube_side_1[1] = bbox_vertices(0, 1) - bbox_vertices(3, 1);
+	cube_side_1[2] = bbox_vertices(0, 2) - bbox_vertices(3, 2);
+	cube_side_2[0] = bbox_vertices(0, 0) - bbox_vertices(1, 0);
+	cube_side_2[1] = bbox_vertices(0, 1) - bbox_vertices(1, 1);
+	cube_side_2[2] = bbox_vertices(0, 2) - bbox_vertices(1, 2);
+	if (cube_side_1.norm() > cube_side_2.norm())
+	{
+		arrow_end.x = arrow_start.x + cube_side_1[0];
+		arrow_end.y = arrow_start.y + cube_side_1[1];
+		arrow_end.z = arrow_start.z + cube_side_1[2];
+		cube_side_start[0] = arrow_end.x;
+		cube_side_start[1] = arrow_end.y;
+		cube_side_start[2] = arrow_end.z;
+		cube_side_end[0] = arrow_start.x - cube_side_1[0];
+		cube_side_end[1] = arrow_start.y - cube_side_1[1];
+		cube_side_end[2] = arrow_start.z - cube_side_1[2];
+	}
+	else
+	{
+		arrow_end.x = arrow_start.x + cube_side_2[0];
+		arrow_end.y = arrow_start.y + cube_side_2[1];
+		arrow_end.z = arrow_start.z + cube_side_2[2];
+		cube_side_start[0] = arrow_end.x;
+		cube_side_start[1] = arrow_end.y;
+		cube_side_start[2] = arrow_end.z;
+		cube_side_end[0] = arrow_start.x - cube_side_1[0];
+		cube_side_end[1] = arrow_start.y - cube_side_1[1];
+		cube_side_end[2] = arrow_start.z - cube_side_1[2];
+	}
+	Eigen::Vector3d optimal_direction(
+		arrow_end.x - arrow_start.x,
+		arrow_end.y - arrow_start.y,
+		arrow_end.z - arrow_start.z
+	);
+	optimal_direction.normalize();
+
+	out_dir = optimal_direction;
 }

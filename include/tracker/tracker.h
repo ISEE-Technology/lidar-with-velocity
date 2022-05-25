@@ -28,6 +28,7 @@
 
 #include "common/time.h"
 
+
 using namespace std;
 using namespace cv;
 
@@ -52,16 +53,12 @@ typedef struct Cube
 };
 
 
-
-
-
 class kfTracker
 {
     EIGEN_MAKE_ALIGNED_OPERATOR_NEW
 public:
     kfTracker()
     {
-
         init_kf(alignedDet());
         m_time_since_update = 0;
 		m_hits = 0;
@@ -74,7 +71,6 @@ public:
         alignedDet detection_in
     )
     {
-        
 		init_kf(detection_in);
         m_time_since_update = 0;
 		m_hits = 0;
@@ -82,6 +78,7 @@ public:
 		m_age = 0;
 		m_id = kf_count;
         estimated_vel_.setZero();
+
     }
     ~kfTracker()
     {
@@ -108,9 +105,11 @@ public:
     int rgb3[3];
     alignedDet detection_cur_;
     alignedDet detection_last_;
+    alignedDet detection_last_2_;
 
     Eigen::Vector3d estimated_vel_;
     Eigen::Matrix3d estimated_vel_cov_;
+    std::vector<std::string> log_;
 
     cv::KalmanFilter kf_;
 
@@ -123,7 +122,6 @@ private:
         alignedDet detection_in
     );
 
-    
 };
 
 class fusion_tracker
@@ -180,10 +178,10 @@ public:
     );
     void points_estimator(
         boost::shared_ptr<pcl::visualization::PCLVisualizer> viewer,
-        const alignedDet & pp_detection,
         const alignedDet & prev_detection,
         const alignedDet & cur_detection,
         Eigen::Vector3d & optimal_vel,
+        Eigen::Matrix3d & optimal_vel_cov,
         const Eigen::Vector2d & pix_vel,
         const Eigen::Matrix2d & pix_vel_cov,
         kfTracker * tracker,
@@ -203,16 +201,29 @@ public:
         const Config & config_
     );
     vector<kfTracker> trackers_;
+    void points_opti(
+        boost::shared_ptr<pcl::visualization::PCLVisualizer> viewer,
+        const Eigen::Vector3d & optimal_direction,
+        Eigen::Vector3d & target_centroid,
+        const pcl::PointCloud<pcl::PointXYZI> & cloud,
+        Eigen::Vector3d & points_vel,
+        Eigen::Matrix3d & points_vel_cov,
+        double octree_size
+    );
+
+    void get_bbox_length(
+        const Eigen::Matrix<double, 8, 3> & bbox_vertices,
+        Eigen::Vector3d & out_dir
+    );
 };
 
 void cloud_undistortion(
+	int track_id,
 	const kfTracker & tracker,
     const alignedDet detection_in,
     const Eigen::Vector3d vel_,
 	pcl::PointCloud<pcl::PointXYZRGB>::Ptr clouds_buffer,
 	pcl::PointCloud<pcl::PointXYZRGB>::Ptr raw_clouds_buffer,
-	visualization_msgs::Marker & arrow_buffer,
 	visualization_msgs::MarkerArray & txt_buffer
 );
-
 #endif

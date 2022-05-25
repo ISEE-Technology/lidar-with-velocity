@@ -4,6 +4,9 @@
 
 #include <thread>
 
+#include <unistd.h>
+
+#include <ros/ros.h>
 #include <pcl/point_types.h>
 #include <pcl/io/pcd_io.h>
 #include <Eigen/Core>
@@ -39,7 +42,7 @@ public:
     ~Config();
 
 
-    bool readParam();
+    bool readParam(ros::NodeHandle & nh);
     bool readData();
 };
 

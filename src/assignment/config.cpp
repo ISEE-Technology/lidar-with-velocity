@@ -13,11 +13,16 @@ Config::~Config()
 }
 
 
-bool Config::readParam()
+bool Config::readParam(ros::NodeHandle & nh)
 {
     std::cout << "-----------------config param-----------------" << std::endl;
+
+    std::string cfig_path;
+    nh.param<std::string>("cfig_path",cfig_path,"");
+    std::cout << "cfig_path : " << cfig_path << std::endl;
+
     YAML::Node config = YAML::LoadFile(
-        "/home/yw/vance/2021ICRA_backup/lidar_with_velocity_ws/src/object_undistort/config/config.yaml"
+        cfig_path.c_str()
     );
     if (config["camera_intrinsic"]) 
     {
